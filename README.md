@@ -2,6 +2,8 @@
 
 A modern, Dockerized web application to manage and split MKV files into 4GB parts using WinRAR. Built with Python (FastAPI) and Vanilla JS, running on Alpine Linux.
 
+![Main Interface](screenshots/main_interface.png)
+
 ## Features
 
 - **📂 File Browser**: Navigate your `/data` volume to select MKV files.
