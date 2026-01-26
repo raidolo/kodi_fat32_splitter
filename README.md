@@ -81,3 +81,8 @@ Developed for the **Kodi** community to handle massive 2160p releases on portabl
 
 ## 📜 License
 *Note: This project provides a wrapper for the `rar` utility. Please ensure you comply with the [RAR License](https://www.rarlab.com/license.htm).*
+
+---
+
+> [!NOTE]
+> This entire repository was designed and implemented using **Vibe Coding** by **Antigravity**.
