@@ -1,71 +1,83 @@
-# Kodi Fat32 Splitter
+# 🎬 Kodi Fat32 Splitter
 
-A modern, Dockerized web application to manage and split MKV files into 4GB parts using WinRAR. Built with Python (FastAPI) and Vanilla JS, running on Alpine Linux.
+A modern, high-performance web dashboard designed to bridge the gap between large 4K/MKV media collections and **FAT32-formatted** drives (commonly used for Kodi, car systems, or legacy hardware). 
+
+Built with **Python (FastAPI)** and **Vanilla JS**, it leverages the industrial-grade `rar` engine to split massive files into bit-perfect 4GB segments with zero overhead.
 
 ![Main Interface](screenshots/main_interface.png)
 
-## Features
+---
 
-- **📂 File Browser**: Navigate your `/data` volume to select MKV files.
-- **✂️ Smart Splitting**:
-    - Splits files into 4095MB parts (FAT32 compatible).
-    - **Status Detection**: Automatically detects if a file is `SPLITTED` (Green) or `PARTIAL` (Orange/Warning).
-    - **Integrity Check**: Verifies split validity by comparing total archive size vs original file size.
-- **🔄 Auto-Cleanup**: Automatically removes old/incomplete artifacts when retrying a split.
-- **🗑️ deletion**:
-    - Delete individual RAR archives with a robust "Force Kill" logic (retries + system `rm -f`).
-    - Bulk clean all RARs in a folder.
-    - **Custom Modals**: Safe confirmation dialogs for destructive actions.
-- **⚡ Reactive UI**: Real-time status updates via polling (no page reloads).
-- **🛑 Process Control**: Stop/Kill running tasks immediately.
+## 🚀 Key Features
 
-## Tech Stack
+- **📂 Smart File Navigator**: Browse your `/data` volume with a clean, responsive breadcrumb interface.
+- **✂️ Bit-Perfect Splitting**:
+    - Automatic 4095MB part calculation (maximum FAT32 safety).
+    - Uses Store mode (`-m0`) for maximum speed (no re-compression).
+- **🛡️ Integrity Engine**:
+    - Real-time status detection: `NOT SPLITTED`, `PARTIAL`, or `SPLITTED`.
+    - Automatically verifies the total archive size against the source MKV.
+- **🔄 Fault-Tolerant Workflow**:
+    - **Self-Cleaning**: Retrying a split automatically wipes old/corrupted parts.
+    - **Force Kill**: Stop any runaway process instantly with immediate resource release.
+- **🗑️ Advanced Deletion**: 
+    - One-click deletion of RAR sets per file.
+    - Bulk "Clean Folder" to sweep all RAR artifacts from a directory.
+    - **Nuclear Deletion**: Bypasses Windows/Docker volume locks using a 10-retry `rm -f` system.
+- **⚡ Reactive Dashboard**: Beautiful dark-mode UI with real-time polling—no page refreshes required.
 
-- **Backend**: Python 3.11 (FastAPI, Uvicorn)
-- **Frontend**: Nginx, HTML5, CSS3, Vanilla JavaScript
-- **Container**: Docker Compose (Alpine Linux base)
-- **Core Utility**: `rar` (Linux x64)
+---
 
-## Prerequisites
+## 🛠️ Tech Stack
 
-- Docker & Docker Compose
+- **Core**: FastAPI (Python 3.11) + Nginx
+- **Logic**: Vanilla ES6 JavaScript (Modern & Lightweight)
+- **Styling**: Custom CSS3 with Inter Typography
+- **Runtime**: Docker Compose (Alpine Linux & Debian Slim)
 
-## Installation & Running
+---
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repository_url>
-   cd "rar splitter v2"
-   ```
+## 🚦 Getting Started
 
-2. **Configure Data Volume**:
-   Open `docker-compose.yml` and ensure the volume mapping points to your actual media folder:
-   ```yaml
-   volumes:
-     - "C:\Path\To\Your\Media:/data"
-   ```
+### 1. Requirements
+- [Docker](https://www.docker.com/get-started)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
-3. **Start the App**:
-   ```bash
-   docker-compose up -d --build
-   ```
+### 2. Deployment
+Clone the repo and configure your media directory:
 
-4. **Access the UI**:
-   Open your browser and navigate to:
-   [http://localhost](http://localhost)
+```bash
+git clone https://github.com/raidolo/kodi_fat32_splitter.git
+cd kodi_fat32_splitter
+```
 
-## Usage
+Edit `docker-compose.yml` to point to your movies:
+```yaml
+# docker-compose.yml
+volumes:
+  - "/path/to/your/movies:/data"
+```
 
-1. **Navigate**: Click folders to explore. Use `.. (Go Back)` to move up.
-2. **Split**: Select a file (checkbox) and click **"Start Split"**.
-   - The status badge will change to a spinner.
-   - Once done, it turns **Green (SPLITTED)**.
-3. **Stop**: If a task is running, click **"Stop Process"** to kill it immediately.
-   - The status will turn **Orange (PARTIAL)**.
-4. **Retry**: To fix a partial split, just click **"Start Split"** again. The app auto-cleans the mess.
-5. **Delete**: Click the **Red Trash Icon** next to a split file to remove its RAR archives.
+Launch the stack:
+```bash
+docker-compose up -d --build
+```
 
-## Troubleshooting
+### 3. Usage
+- Open `http://localhost`
+- Navigate to your folder.
+- Select your MKV and hit **"Start Split"**.
+- Your `.rar` parts will appear in the same folder, ready for your FAT32 drive!
 
-- **"Permission Denied" on Delete**: The app uses a robust retry mechanism (10 attempts) and `rm -f` to bypass Windows/Docker file locking issues. If it fails, wait 10 seconds and try again.
-- **File not found**: Ensure your Docker volume mapping is correct.
+---
+
+## 👨‍💻 Developer Notes
+Developed for the **Kodi** community to handle massive 2160p releases on portable hardware.
+
+> [!TIP]
+> **Performance**: The app uses `rar` with `-m0` (Store), meaning it's limited only by your drive's I/O speed.
+
+---
+
+## 📜 License
+*Note: This project provides a wrapper for the `rar` utility. Please ensure you comply with the [RAR License](https://www.rarlab.com/license.htm).*
