@@ -89,9 +89,11 @@ def get_directory_contents(subpath=""):
                     
                     status = "NONE"
                     if has_files:
-                        # In Store mode (-m0), total RAR size should be >= original size (due to headers)
-                        # We allow a small margin of error just in case, but generally strictly less means incomplete.
-                        if rar_size >= mkv_size:
+                        # Stricter Size Validation:
+                        # 1. Must be at least the size of the original (mkv_size)
+                        # 2. Must not be excessive (e.g. > 10% overhead, though rar overhead is small)
+                        # This prevents "SPLIT" status for incomplete sets
+                        if rar_size >= mkv_size and rar_size <= mkv_size * 1.10:
                             status = "SPLIT"
                         else:
                             status = "PARTIAL"

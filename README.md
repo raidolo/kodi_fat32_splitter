@@ -1,8 +1,6 @@
-# 🎬 Kodi Fat32 Splitter
+# 🎬 Kodi Fat32 Splitter v2
 
-A modern, high-performance web dashboard designed to bridge the gap between large 4K/MKV media collections and **FAT32-formatted** drives (commonly used for Kodi, car systems, or legacy hardware). 
-
-Built with **Python (FastAPI)** and **Vanilla JS**, it leverages the industrial-grade `rar` engine to split massive files into bit-perfect 4GB segments with zero overhead.
+A modern, secure, and high-performance web dashboard designed to bridge the gap between large 4K/MKV media collections and **FAT32-formatted** drives. Now rewritten with a **React** frontend and secured with **OIDC Authentication**.
 
 ![Main Interface](screenshots/main_interface.png)
 
@@ -10,30 +8,54 @@ Built with **Python (FastAPI)** and **Vanilla JS**, it leverages the industrial-
 
 ## 🚀 Key Features
 
-- **📂 Smart File Navigator**: Browse your `/data` volume with a clean, responsive breadcrumb interface.
-- **✂️ Bit-Perfect Splitting**:
-    - Automatic 4095MB part calculation (maximum FAT32 safety).
-    - Uses Store mode (`-m0`) for maximum speed (no re-compression).
-- **🛡️ Integrity Engine**:
-    - Real-time status detection: `NOT SPLITTED`, `PARTIAL`, or `SPLITTED`.
-    - Automatically verifies the total archive size against the source MKV.
-- **🔄 Fault-Tolerant Workflow**:
-    - **Self-Cleaning**: Retrying a split automatically wipes old/corrupted parts.
-    - **Force Kill**: Stop any runaway process instantly with immediate resource release.
-- **🗑️ Advanced Deletion**: 
-    - One-click deletion of RAR sets per file.
-    - Bulk "Clean Folder" to sweep all RAR artifacts from a directory.
-    - **Nuclear Deletion**: Bypasses Windows/Docker volume locks using a 10-retry `rm -f` system.
-- **⚡ Reactive Dashboard**: Beautiful dark-mode UI with real-time polling—no page refreshes required.
+- **🛡️ Secure Access**: Integrated OIDC Authentication (via Pocket-ID, Keycloak, etc.) to keep your dashboard private.
+- **📂 Smart Navigation**: Clean, reactive file browser with breadcrumbs, multi-select, and bulk actions.
+- **⚡ Bit-Perfect Splitting**: Splits massive MKV files into 4GB segments (Store mode `-m0`) with zero re-compression.
+- **🔄 Fault-Tolerant**: Self-cleaning workflow that handles interruptions and locks robustly.
+- **🎨 Modern UI**: Built with **React (Vite)** and **Tailwind-like CSS**, featuring dark mode, animations, and real-time status updates.
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Architecture
 
-- **Core**: FastAPI (Python 3.11) + Nginx
-- **Logic**: Vanilla ES6 JavaScript (Modern & Lightweight)
-- **Styling**: Custom CSS3 with Inter Typography
-- **Runtime**: Docker Compose (Alpine Linux & Debian Slim)
+### Frontend
+- **Framework**: React 18 + Vite
+- **Styling**: Custom CSS3 (Glassmorphism & Cyberpunk aesthetic)
+- **Auth**: `react-oidc-context` for PKCE flow
+- **State**: Real-time polling via Axios
+
+### Backend
+- **Core**: FastAPI (Python 3.11)
+- **Engine**: Official `rar` CLI (Linux x64)
+- **Server**: Nginx (serving frontend & proxying API)
+
+---
+
+## 🔐 Authentication & Configuration
+
+This project supports **OpenID Connect (OIDC)** for authentication. It can also run in a **Mock Mode** for local testing or secured networks.
+
+### Configuration via Environment File
+Configuration is handled via a `.env` file in the root directory.
+
+1.  Copy the example file:
+    ```bash
+    cp .env.example .env
+    ```
+2.  Edit `.env` with your provider details:
+    ```ini
+    OIDC_AUTH=true
+    OIDC_AUTHORITY=https://auth.yourdomain.com
+    OIDC_CLIENT_ID=your-client-id
+    OIDC_CLIENT_SECRET=your-client-secret
+    ```
+3.  Start the stack (Docker Compose automatically reads the `.env` file):
+    ```bash
+    docker-compose up -d
+    ```
+
+#### Disable OIDC (Mock Mode)
+To disable authentication for local testing, set `OIDC_AUTH=false` in your `.env` file.
 
 ---
 
@@ -51,11 +73,13 @@ git clone https://github.com/raidolo/kodi_fat32_splitter.git
 cd kodi_fat32_splitter
 ```
 
-Edit `docker-compose.yml` to point to your movies:
+Edit `docker-compose.yml` to point to your movies and set up auth:
 ```yaml
 # docker-compose.yml
-volumes:
-  - "/path/to/your/movies:/data"
+services:
+  backend:
+    volumes:
+      - "/path/to/your/movies:/data"  # <--- Update this path
 ```
 
 Launch the stack:
@@ -64,15 +88,19 @@ docker-compose up -d --build
 ```
 
 ### 3. Usage
-- Open `http://localhost`
-- Navigate to your folder.
-- Select your MKV and hit **"Start Split"**.
-- Your `.rar` parts will appear in the same folder, ready for your FAT32 drive!
+1.  Open `http://localhost` (or your server IP).
+2.  **Login** via your OIDC provider (if enabled).
+3.  **Browse** your folders using the file navigator.
+4.  **Select** one or multiple MKV files.
+5.  Click **"Start Split"**.
+6.  Monitor progress in real-time. The app will generate `.partX.rar` files next to your media.
 
 ---
 
 ## 👨‍💻 Developer Notes
-Developed for the **Kodi** community to handle massive 2160p releases on portable hardware.
+This repository was refactored from a vanilla JS prototype to a robust React application.
+- **Runtime Config**: The frontend container uses an `entrypoint.sh` script to inject environment variables into `window._env_` at startup, allowing you to change auth settings without rebuilding the image.
+- **Multi-Select**: The UI supports batch processing — select multiple files, and the backend handles the queue.
 
 > [!TIP]
 > **Performance**: The app uses `rar` with `-m0` (Store), meaning it's limited only by your drive's I/O speed.

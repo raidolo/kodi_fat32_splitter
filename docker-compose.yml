@@ -5,7 +5,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - "C:\\Users\\raido\\OneDrive\\Documents\\Development\\rar splitter v2\\data:/data"
+      - "C:/Users/raido/OneDrive/Documents/Development/rar splitter v2/data:/data"
     restart: unless-stopped
 
   frontend:
@@ -15,4 +15,9 @@ services:
       - "80:80"
     depends_on:
       - backend
+    environment:
+      - OIDC_AUTH=${OIDC_AUTH:-true}
+      - OIDC_AUTHORITY=${OIDC_AUTHORITY}
+      - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
+      - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
     restart: unless-stopped
