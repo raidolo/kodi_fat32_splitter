@@ -7,14 +7,23 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
     const [currentPath, setCurrentPath] = useState('');
     const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [expandedFiles, setExpandedFiles] = useState({});
 
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [deleteMode, setDeleteMode] = useState('single'); // 'single' or 'all'
     const [fileToDelete, setFileToDelete] = useState(null);
 
+    const toggleExpand = (name) => {
+        setExpandedFiles(prev => ({
+            ...prev,
+            [name]: !prev[name]
+        }));
+    };
+
     const fetchFiles = async (path) => {
         setLoading(true);
+        setExpandedFiles({}); // Reset expansion on navigation
         try {
             const response = await axios.get(`/api/files?path=${encodeURIComponent(path)}`);
             // Backend returns explicit 'folders' and 'files' lists. We merge them for the UI.
@@ -227,31 +236,56 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
                                 <li
                                     key={file.name}
                                     className={`file-item ${isSelected ? 'selected' : ''}`}
-                                    onClick={() => handleSelect(file)}
                                 >
                                     <div className="file-main">
                                         {file.is_dir ? (
-                                            <Folder size={20} className="folder-icon" />
+                                            <div onClick={() => handleFolderClick(file.name)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
+                                                <Folder size={20} className="folder-icon" />
+                                            </div>
                                         ) : (
-                                            <>
+                                            <div
+                                                className="checkbox-wrapper"
+                                                onClick={() => handleSelect(file)}
+                                                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', paddingRight: '0.5rem' }}
+                                            >
                                                 {file.is_mkv && (
                                                     <input
                                                         type="checkbox"
                                                         checked={isSelected}
                                                         readOnly
                                                         className="file-checkbox"
+                                                        style={{ cursor: 'pointer' }}
                                                     />
                                                 )}
                                                 <File size={20} className="file-icon" />
-                                            </>
+                                            </div>
                                         )}
-                                        <span className="file-name">{file.name}</span>
+                                        <div
+                                            className="file-name-container"
+                                            onClick={() => file.is_dir ? handleFolderClick(file.name) : toggleExpand(file.name)}
+                                            style={{ cursor: 'pointer' }}
+                                        >
+                                            <span
+                                                className={`file-name ${!file.is_dir && expandedFiles[file.name] ? 'expanded' : ''}`}
+                                                title={file.name}
+                                            >
+                                                {file.name}
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <div className="file-meta">
                                         {/* Status Badge */}
-                                        {file.status === 'SPLIT' && <span className="badge badge-split-yes">SPLIT</span>}
-                                        {file.status === 'PARTIAL' && <span className="badge badge-split-warning">PARTIAL</span>}
+                                        {file.status === 'SPLIT' && (
+                                            <span className="badge badge-split-yes">
+                                                SPLIT {file.rar_parts > 0 && `(${file.rar_parts} ${file.rar_parts === 1 ? 'part' : 'parts'})`}
+                                            </span>
+                                        )}
+                                        {file.status === 'PARTIAL' && (
+                                            <span className="badge badge-split-warning">
+                                                PARTIAL {file.rar_parts > 0 && `(${file.rar_parts} ${file.rar_parts === 1 ? 'part' : 'parts'})`}
+                                            </span>
+                                        )}
 
                                         {!file.is_dir && !isLocked && (file.status === 'SPLIT' || file.status === 'PARTIAL') && (
                                             <button

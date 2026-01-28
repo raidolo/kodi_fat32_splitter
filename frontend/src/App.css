@@ -194,11 +194,29 @@
   color: var(--text-secondary);
 }
 
+.file-name-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  /* mask-image removed to show full text when expanded */
+}
+
 .file-name {
   font-size: 0.95rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: block;
+  cursor: pointer;
+  /* Indicate interaction */
+}
+
+.file-name.expanded {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+  /* Ensure long words break */
 }
 
 /* --- Buttons --- */

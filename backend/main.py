@@ -78,14 +78,17 @@ def get_directory_contents(subpath=""):
                     
                     rar_size = 0
                     has_files = False
+                    part_count = 0
                     
                     if os.path.exists(base_name):
                         rar_size += os.path.getsize(base_name)
                         has_files = True
+                        part_count += 1
                         
                     for f in glob.glob(part_pattern):
                         rar_size += os.path.getsize(f)
                         has_files = True
+                        part_count += 1
                     
                     status = "NONE"
                     if has_files:
@@ -102,6 +105,7 @@ def get_directory_contents(subpath=""):
                         "name": entry.name,
                         "path": os.path.relpath(full_path, DATA_DIR).replace("\\", "/"),
                         "status": status,
+                        "rar_parts": part_count,
                         "size_info": f"{rar_size / (1024*1024):.1f}MB / {mkv_size / (1024*1024):.1f}MB"
                     })
     except Exception as e:
