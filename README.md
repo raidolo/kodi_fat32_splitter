@@ -1,4 +1,4 @@
-# 🎬 Kodi Fat32 Splitter v2
+# 🎬 Kodi Fat32 Splitter
 
 A modern, secure, and high-performance web dashboard designed to bridge the gap between large 4K/MKV media collections and **FAT32-formatted** drives. Now rewritten with a **React** frontend and secured with **OIDC Authentication**.
 
