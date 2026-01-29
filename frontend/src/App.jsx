@@ -5,6 +5,7 @@ import FileBrowser from "./components/FileBrowser";
 import TaskControl from "./components/TaskControl";
 import ConfirmationModal from "./components/ConfirmationModal";
 import "./App.css";
+import { version } from "../package.json";
 
 function App() {
   const auth = useAppAuth();
@@ -40,6 +41,9 @@ function App() {
             Login with OIDC
           </button>
         </div>
+        <footer className="app-footer">
+          <p>Vibe Coded by Antigravity &bull; 2026 &bull; v{version}</p>
+        </footer>
       </div>
     );
   }
@@ -89,7 +93,7 @@ function App() {
       </main>
 
       <footer className="app-footer">
-        <p>Vibe Coded by Antigravity &bull; 2026</p>
+        <p>Vibe Coded by Antigravity &bull; 2026 &bull; v{version}</p>
       </footer>
 
       <ConfirmationModal
