@@ -59,7 +59,24 @@ To disable authentication for local testing, set `OIDC_AUTH=false` in your `.env
 
 ---
 
-## 🚦 Getting Started
+## � Quick Start (Docker Image)
+
+The easiest way to run the application is using the pre-built Docker images.
+
+1.  **Download `docker-compose.release.yml`** (and rename it to `docker-compose.yml` if you like).
+2.  **Configure `.env`** (optional, for OIDC):
+    ```env
+    OIDC_AUTH=true
+    OIDC_AUTHORITY=https://your-oidc-provider.com
+    OIDC_CLIENT_ID=your-client-id
+    OIDC_CLIENT_SECRET=your-client-secret
+    ```
+3.  **Run:**
+    ```bash
+    docker-compose -f docker-compose.release.yml up -d
+    ```
+
+## �🚦 Getting Started
 
 ### 1. Requirements
 - [Docker](https://www.docker.com/get-started)
