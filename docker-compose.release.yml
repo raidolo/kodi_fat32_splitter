@@ -1,0 +1,23 @@
+services:
+  backend:
+    image: ghcr.io/raidolo/kodi_fat32_splitter_backend:latest
+    container_name: kodi_fat32_splitter_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./data:/data"
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/raidolo/kodi_fat32_splitter_frontend:latest
+    container_name: kodi_fat32_splitter_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    environment:
+      - OIDC_AUTH=${OIDC_AUTH:-true}
+      - OIDC_AUTHORITY=${OIDC_AUTHORITY}
+      - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
+      - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
+    restart: unless-stopped
