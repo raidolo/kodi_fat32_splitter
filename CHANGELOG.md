@@ -2,9 +2,19 @@
 
 All notable changes to the `dev` branch are documented below.
 
-## [Unreleased / Dev] - 2026-01-28
+## [1.0.1] - 2026-01-30
 
-### 🚀 New Features
+### 🐳 CI/CD & Deployment
+- **Automated Docker Builds**: Implemented GitHub Actions workflow to build and push images to **GitHub Container Registry (GHCR)** automatically on release.
+- **Production Artifacts**: Added `docker-compose.release.yml` for simplified deployment using pre-built images.
+- **Manual Trigger**: Added support for manually dispatching the workflow for existing tags or custom versions.
+- **Documentation**: Overhauled README with a streamlined "Quick Start" guide and Docker Image usage instructions.
+- **Config**: Enforced LF line endings for shell scripts via `.gitattributes` to ensure cross-platform Docker compatibility.
+
+### 🗑️ Cleanup
+- Removed legacy frontend code (vanilla JS/HTML/CSS) to clean up the repository.
+
+### 🚀 New Features (from 1.0.0 Dev)
 - **Mobile UX Refactor**:
     - **Folder Navigation**: Clicking folder names now directly navigates into them, improving touch usability.
     - **File Expansion**: Clicking filenames expands them to show the full text (multiline), solving the issue of truncated long names on mobile.
