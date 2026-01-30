@@ -33,7 +33,7 @@ The easiest way to run the application is using the pre-built Docker images.
 
 3.  **Configure `.env`**:
     By default, `OIDC_AUTH=false` (Mock Mode) is set for easy testing.
-    If you want to enable authentication, open `.env`, set `OIDC_AUTH=true`, and fill in your provider details.
+    If you want to enable authentication, open `.env`, set `OIDC_AUTH=true`, and fill in your provider details (see [Authentication & Configuration](#-authentication--configuration) for details).
 
 4.  **Run**:
     ```bash
