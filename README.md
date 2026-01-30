@@ -20,21 +20,22 @@ A modern, secure, and high-performance web dashboard designed to bridge the gap 
 
 The easiest way to run the application is using the pre-built Docker images.
 
-1.  **Download `docker-compose.release.yml`** and rename it to `docker-compose.yml`.
+1.  **Download Files**:
+    *   Download `docker-compose.release.yml` and rename it to `docker-compose.yml`.
+    *   Download `.env.example` and rename it to `.env`.
+
 2.  **Configure Volumes**:
-    Open the file and update the volume mapping to point to your media folder:
+    Open `docker-compose.yml` and update the volume mapping to point to your media folder:
     ```yaml
     volumes:
       - "/path/to/your/movies:/data" # <--- IMPORTANT: Change this to your actual media folder!
     ```
-3.  **Configure `.env`** (optional, for OIDC):
-    ```env
-    OIDC_AUTH=true
-    OIDC_AUTHORITY=https://your-oidc-provider.com
-    OIDC_CLIENT_ID=your-client-id
-    OIDC_CLIENT_SECRET=your-client-secret
-    ```
-4.  **Run:**
+
+3.  **Configure `.env`**:
+    By default, `OIDC_AUTH=false` (Mock Mode) is set for easy testing.
+    If you want to enable authentication, open `.env`, set `OIDC_AUTH=true`, and fill in your provider details.
+
+4.  **Run**:
     ```bash
     docker-compose up -d
     ```
@@ -63,19 +64,14 @@ This project supports **OpenID Connect (OIDC)** for authentication. It can also 
 ### Configuration via Environment File
 Configuration is handled via a `.env` file in the root directory.
 
-1.  Copy the example file:
-    ```bash
-    cp .env.example .env
-    ```
-2.  Edit `.env` with your provider details:
+1.  **Edit `.env`** with your provider details:
     ```ini
     OIDC_AUTH=true
     OIDC_AUTHORITY=https://auth.yourdomain.com
     OIDC_CLIENT_ID=your-client-id
     OIDC_CLIENT_SECRET=your-client-secret
     ```
-3.  **Download `docker-compose.release.yml`** and rename it to `docker-compose.yml` (if you haven't already).
-4.  Start the stack (Docker Compose automatically reads the `.env` file):
+2.  **Start the stack** (Docker Compose automatically reads the `.env` file):
     ```bash
     docker-compose up -d
     ```
