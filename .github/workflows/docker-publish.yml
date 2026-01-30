@@ -3,6 +3,12 @@ name: Docker Release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Manual Tag (e.g. v1.0.1)'
+        required: true
+        default: 'latest'
 
 env:
   REGISTRY: ghcr.io
@@ -31,6 +37,9 @@ jobs:
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}_backend
+          tags: |
+            type=ref,event=tag
+            type=raw,value=${{ inputs.tag_name }},enable=${{ github.event_name == 'workflow_dispatch' }}
 
       - name: Build and push Backend
         uses: docker/build-push-action@f2a1d5e99d037542a71f438878490089a41219b6
@@ -45,6 +54,9 @@ jobs:
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}_frontend
+          tags: |
+            type=ref,event=tag
+            type=raw,value=${{ inputs.tag_name }},enable=${{ github.event_name == 'workflow_dispatch' }}
 
       - name: Build and push Frontend
         uses: docker/build-push-action@f2a1d5e99d037542a71f438878490089a41219b6
