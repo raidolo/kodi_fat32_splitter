@@ -63,7 +63,7 @@ To disable authentication for local testing, set `OIDC_AUTH=false` in your `.env
 
 The easiest way to run the application is using the pre-built Docker images.
 
-1.  **Download `docker-compose.release.yml`** (and rename it to `docker-compose.yml` if you like).
+1.  **Download `docker-compose.release.yml`** and rename it to `docker-compose.yml`.
 2.  **Configure Volumes**:
     Open the file and update the volume mapping to point to your media folder:
     ```yaml
@@ -79,7 +79,7 @@ The easiest way to run the application is using the pre-built Docker images.
     ```
 4.  **Run:**
     ```bash
-    docker-compose -f docker-compose.release.yml up -d
+    docker-compose up -d
     ```
 
 ## �🚦 Getting Started
