@@ -16,6 +16,31 @@ A modern, secure, and high-performance web dashboard designed to bridge the gap 
 
 ---
 
+## 🚀 Quick Start (Docker Image)
+
+The easiest way to run the application is using the pre-built Docker images.
+
+1.  **Download `docker-compose.release.yml`** and rename it to `docker-compose.yml`.
+2.  **Configure Volumes**:
+    Open the file and update the volume mapping to point to your media folder:
+    ```yaml
+    volumes:
+      - "/path/to/your/movies:/data" # <--- IMPORTANT: Change this to your actual media folder!
+    ```
+3.  **Configure `.env`** (optional, for OIDC):
+    ```env
+    OIDC_AUTH=true
+    OIDC_AUTHORITY=https://your-oidc-provider.com
+    OIDC_CLIENT_ID=your-client-id
+    OIDC_CLIENT_SECRET=your-client-secret
+    ```
+4.  **Run:**
+    ```bash
+    docker-compose up -d
+    ```
+
+---
+
 ## 🛠️ Architecture
 
 ### Frontend
@@ -49,7 +74,8 @@ Configuration is handled via a `.env` file in the root directory.
     OIDC_CLIENT_ID=your-client-id
     OIDC_CLIENT_SECRET=your-client-secret
     ```
-3.  Start the stack (Docker Compose automatically reads the `.env` file):
+3.  **Download `docker-compose.release.yml`** and rename it to `docker-compose.yml` (if you haven't already).
+4.  Start the stack (Docker Compose automatically reads the `.env` file):
     ```bash
     docker-compose up -d
     ```
@@ -59,30 +85,7 @@ To disable authentication for local testing, set `OIDC_AUTH=false` in your `.env
 
 ---
 
-## � Quick Start (Docker Image)
-
-The easiest way to run the application is using the pre-built Docker images.
-
-1.  **Download `docker-compose.release.yml`** and rename it to `docker-compose.yml`.
-2.  **Configure Volumes**:
-    Open the file and update the volume mapping to point to your media folder:
-    ```yaml
-    volumes:
-      - "/path/to/your/movies:/data" # <--- IMPORTANT: Change this to your actual media folder!
-    ```
-3.  **Configure `.env`** (optional, for OIDC):
-    ```env
-    OIDC_AUTH=true
-    OIDC_AUTHORITY=https://your-oidc-provider.com
-    OIDC_CLIENT_ID=your-client-id
-    OIDC_CLIENT_SECRET=your-client-secret
-    ```
-4.  **Run:**
-    ```bash
-    docker-compose up -d
-    ```
-
-## �🚦 Getting Started
+## 🚦 Getting Started (Development)
 
 ### 1. Requirements
 - [Docker](https://www.docker.com/get-started)
