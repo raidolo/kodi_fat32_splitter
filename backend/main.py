@@ -64,7 +64,7 @@ def get_directory_contents(subpath=""):
                         "name": entry.name,
                         "path": os.path.relpath(full_path, DATA_DIR).replace("\\", "/")
                     })
-                elif entry.is_file() and entry.name.lower().endswith(".mkv"):
+                elif entry.is_file() and entry.name.lower().endswith((".mkv", ".mp4")):
                     # Check split status by size verification
                     mkv_size = entry.stat().st_size
                     
@@ -319,8 +319,8 @@ def delete_rars(request: DeleteRequest):
     
     if request.mode == "single":
         # Delete specific file's RARs
-        if not target_path.lower().endswith(".mkv"):
-             raise HTTPException(status_code=400, detail="Target must be an MKV file")
+        if not target_path.lower().endswith((".mkv", ".mp4")):
+             raise HTTPException(status_code=400, detail="Target must be an MKV or MP4 file")
              
         deleted_count = cleanup_file_artifacts(target_path)
             

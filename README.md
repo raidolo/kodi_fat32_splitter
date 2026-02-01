@@ -10,7 +10,8 @@ A modern, secure, and high-performance web dashboard designed to bridge the gap 
 
 - **🛡️ Secure Access**: Integrated OIDC Authentication (via Pocket-ID, Keycloak, etc.) to keep your dashboard private.
 - **📂 Smart Navigation**: Clean, reactive file browser with breadcrumbs, multi-select, and bulk actions.
-- **⚡ Bit-Perfect Splitting**: Splits massive MKV files into 4GB segments (Store mode `-m0`) with zero re-compression.
+-   **Format Support**: Handles `.mkv` and `.mp4` files (Large MKV/MP4 -> 4GB FAT32 chunks).
+- **⚡ Bit-Perfect Splitting**: Splits files into 4GB segments (Store mode `-m0`) with zero re-compression.
 - **🔄 Fault-Tolerant**: Self-cleaning workflow that handles interruptions and locks robustly.
 - **🎨 Modern UI**: Built with **React (Vite)** and **Tailwind-like CSS**, featuring dark mode, animations, and real-time status updates.
 

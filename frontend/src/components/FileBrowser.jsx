@@ -29,7 +29,7 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
             // Backend returns explicit 'folders' and 'files' lists. We merge them for the UI.
             const combined = [
                 ...response.data.folders.map(f => ({ ...f, is_dir: true })),
-                ...response.data.files.map(f => ({ ...f, is_dir: false, is_mkv: f.name.toLowerCase().endsWith('.mkv') }))
+                ...response.data.files.map(f => ({ ...f, is_dir: false, is_media: /\.(mkv|mp4)$/i.test(f.name) }))
             ];
             setFiles(combined);
             // Don't overwrite current path if just refreshing, unless explicit navigation
@@ -60,7 +60,7 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
     const handleSelect = (file) => {
         if (file.is_dir) {
             handleFolderClick(file.name);
-        } else if (file.is_mkv) {
+        } else if (file.is_media) {
             // Toggle Logic
             const fullPath = currentPath ? `${currentPath}/${file.name}` : file.name;
             const isSelected = selectedFiles.some(f => f.name === fullPath);
@@ -75,13 +75,13 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
     };
 
     const handleSelectAll = () => {
-        const allMkvFiles = files
-            .filter(f => !f.is_dir && f.is_mkv)
+        const allMediaFiles = files
+            .filter(f => !f.is_dir && f.is_media)
             .map(f => ({ name: currentPath ? `${currentPath}/${f.name}` : f.name }));
 
         // Merge with existing selection to avoid duplicates
         const newSelection = [...selectedFiles];
-        allMkvFiles.forEach(file => {
+        allMediaFiles.forEach(file => {
             if (!newSelection.some(sel => sel.name === file.name)) {
                 newSelection.push(file);
             }
@@ -247,7 +247,7 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
                                                 onClick={() => handleSelect(file)}
                                                 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', paddingRight: '0.5rem' }}
                                             >
-                                                {file.is_mkv && (
+                                                {file.is_media && (
                                                     <input
                                                         type="checkbox"
                                                         checked={isSelected}
