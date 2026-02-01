@@ -192,7 +192,6 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
                             className="btn-icon btn-danger-icon"
                             title="Delete All RARs"
                             onClick={confirmDeleteAll}
-                            disabled={isLocked}
                         >
                             <Trash2 size={18} />
                             <span className="btn-label-sm">All</span>
@@ -287,7 +286,7 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
                                             </span>
                                         )}
 
-                                        {!file.is_dir && !isLocked && (file.status === 'SPLIT' || file.status === 'PARTIAL') && (
+                                        {!file.is_dir && (file.status === 'SPLIT' || file.status === 'PARTIAL') && (
                                             <button
                                                 className="btn-icon btn-delete"
                                                 onClick={(e) => confirmDelete(e, file)}
