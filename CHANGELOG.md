@@ -2,6 +2,15 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.0.4] - 2026-02-02
+
+### ⬆️ Dependency Updates
+- **ESLint & Plugins**: Updated to latest 2026 versions to resolve deprecation warnings and improve code quality checks.
+    - `eslint`: `^9.39.2`
+    - `eslint-plugin-react`: `^7.37.5`
+    - `eslint-plugin-react-hooks`: `^7.0.1`
+    - `globals`: `^17.3.0`
+
 ## [v1.0.3] - 2026-02-02
 
 ### 🆕 New Features
