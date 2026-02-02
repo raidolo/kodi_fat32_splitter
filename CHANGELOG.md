@@ -2,6 +2,16 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.0.3] - 2026-02-02
+
+### 🆕 New Features
+- **File Size Badge**: Added visual indicator of file size next to filenames.
+    - **Green Badge**: Files < 4GB (Safe, no split needed).
+    - **Red Badge**: Files >= 4GB (Exceeds FAT32 limit, split required).
+
+### 🛠 Improvements
+- **Refactoring**: Renamed backend variables (e.g., `mkv_size` -> `file_size`) to be semantically generic for multi-format support.
+
 ## [v1.0.2] - 2026-02-02
 
 ### 🆕 New Features

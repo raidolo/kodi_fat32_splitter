@@ -49,6 +49,24 @@ button {
   font-family: inherit;
 }
 
+.badge-size {
+  border: 1px solid;
+}
+
+.badge-size-green {
+  background-color: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.badge-size-red {
+  background-color: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+/* Animations and Keyframes */
+
 .btn-primary {
   background-color: var(--accent-color);
   color: white;

@@ -14,6 +14,17 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
     const [deleteMode, setDeleteMode] = useState('single'); // 'single' or 'all'
     const [fileToDelete, setFileToDelete] = useState(null);
 
+    const FAT32_LIMIT = 4095 * 1024 * 1024; // 4095 MB in bytes
+
+    const formatBytes = (bytes, decimals = 1) => {
+        if (!+bytes) return '0 B';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+    };
+
     const toggleExpand = (name) => {
         setExpandedFiles(prev => ({
             ...prev,
@@ -259,6 +270,17 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
                                                 <File size={20} className="file-icon" />
                                             </div>
                                         )}
+
+                                        {/* Size Badge */}
+                                        {!file.is_dir && file.original_size !== undefined && (
+                                            <div
+                                                className={`badge-size ${file.original_size >= FAT32_LIMIT ? 'badge-size-red' : 'badge-size-green'}`}
+                                                style={{ marginRight: '0.75rem', fontSize: '0.75rem', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 }}
+                                            >
+                                                {formatBytes(file.original_size)}
+                                            </div>
+                                        )}
+
                                         <div
                                             className="file-name-container"
                                             onClick={() => file.is_dir ? handleFolderClick(file.name) : toggleExpand(file.name)}

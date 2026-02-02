@@ -66,7 +66,7 @@ def get_directory_contents(subpath=""):
                     })
                 elif entry.is_file() and entry.name.lower().endswith((".mkv", ".mp4")):
                     # Check split status by size verification
-                    mkv_size = entry.stat().st_size
+                    file_size = entry.stat().st_size
                     
                     # Glob for all related parts
                     # Patterns: 
@@ -93,10 +93,10 @@ def get_directory_contents(subpath=""):
                     status = "NONE"
                     if has_files:
                         # Stricter Size Validation:
-                        # 1. Must be at least the size of the original (mkv_size)
+                        # 1. Must be at least the size of the original (file_size)
                         # 2. Must not be excessive (e.g. > 10% overhead, though rar overhead is small)
                         # This prevents "SPLIT" status for incomplete sets
-                        if rar_size >= mkv_size and rar_size <= mkv_size * 1.10:
+                        if rar_size >= file_size and rar_size <= file_size * 1.10:
                             status = "SPLIT"
                         else:
                             status = "PARTIAL"
@@ -106,7 +106,8 @@ def get_directory_contents(subpath=""):
                         "path": os.path.relpath(full_path, DATA_DIR).replace("\\", "/"),
                         "status": status,
                         "rar_parts": part_count,
-                        "size_info": f"{rar_size / (1024*1024):.1f}MB / {mkv_size / (1024*1024):.1f}MB"
+                        "original_size": file_size,
+                        "size_info": f"{rar_size / (1024*1024):.1f}MB / {file_size / (1024*1024):.1f}MB"
                     })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -129,7 +130,7 @@ def get_directory_contents(subpath=""):
     }
 
 def cleanup_file_artifacts(target_path: str):
-    """Clean up any RAR artifacts for a specific MKV file."""
+    """Clean up any RAR artifacts for a specific media file."""
     # Detect patterns: 
     # 1. Exact match: filename.rar
     # 2. Parts: filename.part*.rar
