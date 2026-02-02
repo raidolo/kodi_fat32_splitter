@@ -36,7 +36,6 @@ jobs:
           
           # Extract the section from CHANGELOG.md corresponding to this tag
           # Assumes format "## [TAG] - DATE"
-          # sed -n "/^## \[$TAG_NAME\]/,/^## \[/p" CHANGELOG.md | sed '1d;$d'
           
           # Simple extraction logic: Find the line with the tag, print until the next "## [" line
           awk "/^## \[$TAG_NAME\]/{flag=1;next} /^## \[/{flag=0} flag" CHANGELOG.md > release_notes.md

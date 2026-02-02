@@ -2,13 +2,13 @@
 
 All notable changes to the `dev` branch are documented below.
 
-## [1.0.2] - 2026-02-02
+## [v1.0.2] - 2026-02-02
 
 ### 🆕 New Features
 - **MP4 Support**: Added full support for splitting and managing `.mp4` (and `.MP4`) files, in addition to `.mkv`.
 - **UI Improvements**: Unlocked "Delete" actions during active split tasks. You can now delete unrelated files while a background job is running.
 
-## [1.0.1] - 2026-01-30
+## [v1.0.1] - 2026-01-30
 
 ### 🐳 CI/CD & Deployment
 - **Automated Docker Builds**: Implemented GitHub Actions workflow to build and push images to **GitHub Container Registry (GHCR)** automatically on release.
