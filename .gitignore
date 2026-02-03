@@ -40,3 +40,7 @@ Thumbs.db
 # Environment
 .env
 .env.local
+
+# Agent
+.agent/
+scripts/
