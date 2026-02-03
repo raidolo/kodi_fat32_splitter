@@ -26,7 +26,7 @@ body {
 }
 
 .app-container {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 1rem;
 }
@@ -59,6 +59,12 @@ button {
   border-color: rgba(52, 211, 153, 0.3);
 }
 
+.badge-subs {
+  background-color: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
 .badge-size-red {
   background-color: rgba(248, 113, 113, 0.1);
   color: #f87171;
@@ -74,4 +80,48 @@ button {
 
 .btn-primary:hover {
   background-color: var(--accent-hover);
+}
+
+/* File List Responsiveness */
+.file-info-col {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.file-badges-container {
+  margin-right: 0.75rem;
+  order: 1;
+  /* Badges first on desktop */
+}
+
+.file-name-container {
+  order: 2;
+  /* Name second on desktop */
+}
+
+@media (max-width: 768px) {
+  .file-info-col {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .file-name-container {
+    order: 1;
+    /* Name first on mobile */
+    margin-bottom: 0.25rem;
+    width: 100%;
+  }
+
+  .file-badges-container {
+    order: 2;
+    /* Badges below on mobile */
+    margin-right: 0;
+  }
+
+  .file-checkbox {
+    transform: scale(1.2);
+    /* Easier to tap on mobile */
+  }
 }

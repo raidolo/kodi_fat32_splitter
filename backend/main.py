@@ -65,8 +65,41 @@ def get_directory_contents(subpath=""):
                         "path": os.path.relpath(full_path, DATA_DIR).replace("\\", "/")
                     })
                 elif entry.is_file() and entry.name.lower().endswith((".mkv", ".mp4")):
-                    # Check split status by size verification
                     file_size = entry.stat().st_size
+                    # Subtitle Detection
+                    # Pattern: video_name.*.srt OR video_name.srt
+                    base_name_no_ext = os.path.splitext(entry.name)[0]
+                    # Filter matching files in the current scan iterator is hard, better to use glob or re-scan?
+                    # Since we are iterating, we can't easily peek.
+                    # Efficient approach: we iterate all files anyway. But relating them is tricky in a single pass without storing all.
+                    # Alternative: Use glob for subs finding per video. It's file-system intensive but accurate.
+                    
+                    subs_pattern = glob.escape(full_path.rsplit('.', 1)[0]) + "*.srt"
+                    subs_files = []
+                    # Also check for exact match if glob doesn't cover it? (glob * covers .en.srt and .srt)
+                    # Be careful not to match "movie_sequel.srt" if we have "movie.mkv". 
+                    # full_path without extension -> "movie"
+                    # glob "movie*.srt" matches "movie_sequel.srt".
+                    # We want "movie.srt", "movie.en.srt", "movie.it.srt".
+                    # So essentially string must start with "movie."
+                    
+                    video_base_prefix = full_path.rsplit('.', 1)[0] + "."
+                    
+                    detected_subs = []
+                    subs_size = 0
+                    
+                    # Glob is safer
+                    for potential_sub in glob.glob(subs_pattern):
+                         # Standard convention check: 
+                         # valid: /path/movie.srt, /path/movie.en.srt
+                         # invalid: /path/movie_sequel.srt
+                         if potential_sub.startswith(video_base_prefix) or potential_sub == (full_path.rsplit('.', 1)[0] + ".srt"):
+                             detected_subs.append(potential_sub)
+                             subs_size += os.path.getsize(potential_sub)
+
+                    total_size = file_size + subs_size
+
+                    # Check split status by size verification
                     
                     # Glob for all related parts
                     # Patterns: 
@@ -93,10 +126,10 @@ def get_directory_contents(subpath=""):
                     status = "NONE"
                     if has_files:
                         # Stricter Size Validation:
-                        # 1. Must be at least the size of the original (file_size)
+                        # 1. Must be at least the size of the original (total_size)
                         # 2. Must not be excessive (e.g. > 10% overhead, though rar overhead is small)
                         # This prevents "SPLIT" status for incomplete sets
-                        if rar_size >= file_size and rar_size <= file_size * 1.10:
+                        if rar_size >= total_size and rar_size <= total_size * 1.10:
                             status = "SPLIT"
                         else:
                             status = "PARTIAL"
@@ -106,8 +139,10 @@ def get_directory_contents(subpath=""):
                         "path": os.path.relpath(full_path, DATA_DIR).replace("\\", "/"),
                         "status": status,
                         "rar_parts": part_count,
-                        "original_size": file_size,
-                        "size_info": f"{rar_size / (1024*1024):.1f}MB / {file_size / (1024*1024):.1f}MB"
+                        "original_size": file_size, # Keep video size for display text
+                        "total_size": total_size,   # For Red/Green badge logic
+                        "subs_count": len(detected_subs),
+                        "size_info": f"{rar_size / (1024*1024):.1f}MB / {total_size / (1024*1024):.1f}MB"
                     })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -188,20 +223,37 @@ def run_split_task(files: List[str]):
             print(f"Cleaning up artifacts for {file_path}...")
             cleanup_file_artifacts(file_path)
 
-            # Construct RAR command
-            # RAR automatically handles part naming
-            archive_name = file_path + ".rar"
+            # Detect Subtitles to include
+            video_base_prefix = file_path.rsplit('.', 1)[0] + "."
+            subs_pattern = glob.escape(file_path.rsplit('.', 1)[0]) + "*.srt"
+            detected_subs = []
+            
+            for potential_sub in glob.glob(subs_pattern):
+                 if potential_sub.startswith(video_base_prefix) or potential_sub == (file_path.rsplit('.', 1)[0] + ".srt"):
+                     detected_subs.append(potential_sub)
+                     print(f"Including subtitle: {potential_sub}")
+
+            # Construct RAR command using RELATIVE PATHS (executed in work_dir)
+            # This prevents Storing /data/Folder/File inside the RAR
+            
+            work_dir = os.path.dirname(file_path)
+            file_basename = os.path.basename(file_path)
+            archive_name_rel = file_basename + ".rar"
             
             cmd = [
                 "rar", "a", 
                 "-v4095M", 
                 "-m0",  # Store mode for speed
                 "-y",   # Assume yes on overwrite/questions
-                archive_name, 
-                file_path
+                archive_name_rel, 
+                file_basename
             ]
             
-            print(f"Starting command: {' '.join(cmd)}")
+            # Append subtitles (basenames only)
+            if detected_subs:
+                cmd.extend([os.path.basename(s) for s in detected_subs])
+            
+            print(f"Starting command: {' '.join(cmd)} in CACHED_DIR: {work_dir}")
             
             try:
                 # Start process with lock to ensure kill endpoint sees it immediately
@@ -214,7 +266,8 @@ def run_split_task(files: List[str]):
                         stdout=subprocess.PIPE, 
                         stderr=subprocess.STDOUT, 
                         text=True,
-                        bufsize=1
+                        bufsize=1,
+                        cwd=work_dir  # Execute in the file's directory
                     )
                 
                 if task_state.process.stdout:

@@ -2,6 +2,26 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.0.5] - 2026-02-03
+
+### 📱 UI & Mobile Optimization
+- **Responsive Layout**: Badges automatically wrap below the filename on small screens (<768px), preventing horizontal overlap.
+- **Improved Status Console**:
+    - **Text Comparison**: Console messages now wrap properly instead of being truncated.
+    - **Icon Alignment**: Fixed status icon alignment and prevented it from shrinking on long messages.
+- **Status Badge Relocation**: Moved status indicators (SPLIT/PARTIAL) to the shared badge container for consistent mobile wrapping.
+- **Wider Desktop View**: Increased max-width to 1200px for better use of screen real estate.
+
+### 🎬 Subtitle Support
+- **Automatic Detection**: Logic now scans for `.srt` files matching the video filename (e.g., `movie.en.srt`).
+- **Zero-Config**: Detected subtitles are **automatically included** in the RAR archive by default. No manual selection or settings required.
+- **Smart Sizing**: "Subs" badge added to UI, and subtitle size is included in the total size calculation for FAT32 optimization.
+
+### 🛠 Improvements & Fixes
+- **RAR Relative Paths**: Fixed an issue where archives contained full absolute paths or parent directories.
+    - Archives now strictly contain only the video file and its subtitles at the root level.
+    - Implemented execution with `cwd` set to the file's directory to ensure clean paths.
+
 ## [v1.0.4] - 2026-02-02
 
 ### ⬆️ Dependency Updates

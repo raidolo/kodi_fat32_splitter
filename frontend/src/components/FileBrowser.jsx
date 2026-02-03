@@ -271,43 +271,64 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
                                             </div>
                                         )}
 
-                                        {/* Size Badge */}
-                                        {!file.is_dir && file.original_size !== undefined && (
-                                            <div
-                                                className={`badge-size ${file.original_size >= FAT32_LIMIT ? 'badge-size-red' : 'badge-size-green'}`}
-                                                style={{ marginRight: '0.75rem', fontSize: '0.75rem', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 }}
-                                            >
-                                                {formatBytes(file.original_size)}
-                                            </div>
-                                        )}
+                                        <div className="file-info-col">
+                                            {/* Size/Subs/Status Badge Container */}
+                                            {!file.is_dir && (
+                                                <div className="file-badges-container" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                    {file.original_size !== undefined && (
+                                                        <>
+                                                            {/* Subs Badge */}
+                                                            {file.subs_count > 0 && (
+                                                                <div
+                                                                    className="badge-size badge-subs"
+                                                                    style={{ fontSize: '0.75rem', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 }}
+                                                                >
+                                                                    {file.subs_count} Subs
+                                                                </div>
+                                                            )}
 
-                                        <div
-                                            className="file-name-container"
-                                            onClick={() => file.is_dir ? handleFolderClick(file.name) : toggleExpand(file.name)}
-                                            style={{ cursor: 'pointer' }}
-                                        >
-                                            <span
-                                                className={`file-name ${!file.is_dir && expandedFiles[file.name] ? 'expanded' : ''}`}
-                                                title={file.name}
+                                                            {/* Total Size Badge */}
+                                                            <div
+                                                                className={`badge-size ${file.total_size >= FAT32_LIMIT ? 'badge-size-red' : 'badge-size-green'}`}
+                                                                title={`Video: ${formatBytes(file.original_size)} + Subs`}
+                                                                style={{ fontSize: '0.75rem', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 }}
+                                                            >
+                                                                {formatBytes(file.total_size)}
+                                                            </div>
+                                                        </>
+                                                    )}
+
+                                                    {/* Status Badge (Moved here) */}
+                                                    {file.status === 'SPLIT' && (
+                                                        <span className="badge badge-split-yes" style={{ fontSize: '0.75rem', padding: '2px 6px' }}>
+                                                            SPLIT {file.rar_parts > 0 && `(${file.rar_parts} ${file.rar_parts === 1 ? 'part' : 'parts'})`}
+                                                        </span>
+                                                    )}
+                                                    {file.status === 'PARTIAL' && (
+                                                        <span className="badge badge-split-warning" style={{ fontSize: '0.75rem', padding: '2px 6px' }}>
+                                                            PARTIAL {file.rar_parts > 0 && `(${file.rar_parts} ${file.rar_parts === 1 ? 'part' : 'parts'})`}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            <div
+                                                className="file-name-container"
+                                                onClick={() => file.is_dir ? handleFolderClick(file.name) : toggleExpand(file.name)}
+                                                style={{ cursor: 'pointer' }}
                                             >
-                                                {file.name}
-                                            </span>
+                                                <span
+                                                    className={`file-name ${!file.is_dir && expandedFiles[file.name] ? 'expanded' : ''}`}
+                                                    title={file.name}
+                                                >
+                                                    {file.name}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div className="file-meta">
-                                        {/* Status Badge */}
-                                        {file.status === 'SPLIT' && (
-                                            <span className="badge badge-split-yes">
-                                                SPLIT {file.rar_parts > 0 && `(${file.rar_parts} ${file.rar_parts === 1 ? 'part' : 'parts'})`}
-                                            </span>
-                                        )}
-                                        {file.status === 'PARTIAL' && (
-                                            <span className="badge badge-split-warning">
-                                                PARTIAL {file.rar_parts > 0 && `(${file.rar_parts} ${file.rar_parts === 1 ? 'part' : 'parts'})`}
-                                            </span>
-                                        )}
-
+                                        {/* Delete Button Only */}
                                         {!file.is_dir && (file.status === 'SPLIT' || file.status === 'PARTIAL') && (
                                             <button
                                                 className="btn-icon btn-delete"

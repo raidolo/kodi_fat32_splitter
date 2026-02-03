@@ -102,7 +102,7 @@
 
 .console-output {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.75rem;
   background: #0d1117;
   padding: 0.5rem;
@@ -110,10 +110,18 @@
   font-family: monospace;
   font-size: 0.85rem;
   color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: pre-wrap;
+  /* Allow wrapping */
+  word-break: break-all;
+  /* Break long paths */
+  overflow-wrap: break-word;
   margin-top: 1rem;
+}
+
+.console-output svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  /* Visual alignment with text cap-height */
 }
 
 /* --- File Browser --- */
