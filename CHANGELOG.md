@@ -2,6 +2,11 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.0.8] - 2026-02-04
+
+### 🐛 Bug Fixes
+- **Initialization**: Added startup event to ensure `settings.json` is generated immediately when the backend container starts, rather than waiting for the first API call.
+
 ## [v1.0.7] - 2026-02-04
 
 ### 🐛 Bug Fixes

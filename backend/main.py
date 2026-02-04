@@ -14,6 +14,12 @@ DATA_DIR = "/data"
 CONFIG_DIR = "/config"
 SETTINGS_FILE = os.path.join(CONFIG_DIR, "settings.json")
 
+# Ensure settings exist on startup
+@app.on_event("startup")
+async def startup_event():
+    print("Checking settings configuration...")
+    get_settings_internal()
+
 class SplitRequest(BaseModel):
     files: List[str]
 
