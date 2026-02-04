@@ -11,6 +11,41 @@
   --primary-gradient: linear-gradient(135deg, #238636 0%, #2f81f7 100%);
 }
 
+/* Light Theme */
+[data-theme="light"] {
+  --bg-color: #ffffff;
+  --card-bg: #f6f8fa;
+  --text-primary: #24292f;
+  --text-secondary: #57606a;
+  --accent-color: #2da44e;
+  --accent-hover: #2c974b;
+  --danger-color: #cf222e;
+  --danger-hover: #a40e26;
+  --border-color: #d0d7de;
+  --primary-gradient: linear-gradient(90deg, #2da44e, #2c974b);
+}
+
+/* Cyberpunk Theme */
+[data-theme="cyberpunk"] {
+  --bg-color: #050510;
+  --card-bg: #121225;
+  --text-primary: #00f0ff;
+  --text-secondary: #ff00ff;
+  --accent-color: #fcee0a;
+  --accent-hover: #fff050;
+  --danger-color: #ff0055;
+  --danger-hover: #ff4080;
+  --border-color: #00f0ff;
+  --primary-gradient: linear-gradient(90deg, #fcee0a, #00f0ff);
+
+  /* Cyberpunk specific badging overrides */
+  & .badge-size-green {
+    background-color: rgba(252, 238, 10, 0.1);
+    color: #fcee0a;
+    border-color: rgba(252, 238, 10, 0.4);
+  }
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

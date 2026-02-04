@@ -2,6 +2,30 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.0.6] - 2026-02-04
+
+### ⚙️ Settings System
+- **New Settings Page**: Dedicated configuration area accessible via the header icon.
+- **Theme Selection**:
+    - **Dark** (Default)
+    - **Light**: For high-brightness environments.
+    - **Cyberpunk**: A neon-heavy aesthetic.
+    - *Themes apply instantly upon selection.*
+- **Subtitle Management**:
+    - **Include Subtitles Toggle**: Enable/Disable automatic inclusion of `.srt` files.
+    - When disabled, `.srt` files are ignored during splitting and size calculation.
+
+### 🛡️ Core Reliability
+- **Strict Validation Logic**: 
+    - Replaced percentage-based validation (1%-10%) with **Fixed Buffer Validation**.
+    - Max allowed overhead is now **2KB per RAR volume** (ignoring header size).
+    - This ensures extremely precise detection of incomplete or modified archives (e.g., if unwanted headers or files are present).
+
+### 🐛 Fixes & Improvements
+- **Router Integration**: Added `react-router-dom` for seamless navigation between Dashboard and Settings.
+- **UI UX**: Added "Back" button to Settings page for easy return to dashboard.
+- **Backend**: Fixed indentation regression in file scanner caused by settings logic integration.
+
 ## [v1.0.5] - 2026-02-03
 
 ### 📱 UI & Mobile Optimization

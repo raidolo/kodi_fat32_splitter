@@ -11,6 +11,8 @@ from pydantic import BaseModel
 app = FastAPI()
 
 DATA_DIR = "/data"
+CONFIG_DIR = "/config"
+SETTINGS_FILE = os.path.join(CONFIG_DIR, "settings.json")
 
 class SplitRequest(BaseModel):
     files: List[str]
@@ -24,7 +26,13 @@ class TaskStatus(BaseModel):
     current_file: str | None
     files_total: int
     files_processed: int
+    files_processed: int
     last_output: str
+
+class Settings(BaseModel):
+    theme: str = "dark"
+    include_subtitles: bool = True
+
 
 # Global State
 class BackgroundTask:
@@ -97,6 +105,11 @@ def get_directory_contents(subpath=""):
                              detected_subs.append(potential_sub)
                              subs_size += os.path.getsize(potential_sub)
 
+                    # Dynamic Settings Check
+                    settings = get_settings_internal()
+                    if not settings.include_subtitles:
+                        subs_size = 0 # Don't count extra size
+                        
                     total_size = file_size + subs_size
 
                     # Check split status by size verification
@@ -125,11 +138,12 @@ def get_directory_contents(subpath=""):
                     
                     status = "NONE"
                     if has_files:
-                        # Stricter Size Validation:
-                        # 1. Must be at least the size of the original (total_size)
-                        # 2. Must not be excessive (e.g. > 10% overhead, though rar overhead is small)
-                        # This prevents "SPLIT" status for incomplete sets
-                        if rar_size >= total_size and rar_size <= total_size * 1.10:
+                        # Strict Size Validation using Fixed Overhead
+                        # Store mode (-m0) overhead is headers only, not proportional to size.
+                        # We allow ~2KB per RAR volume for headers.
+                        overhead_buffer = part_count * 2048 
+                        
+                        if rar_size >= total_size and rar_size <= (total_size + overhead_buffer):
                             status = "SPLIT"
                         else:
                             status = "PARTIAL"
@@ -231,7 +245,15 @@ def run_split_task(files: List[str]):
             for potential_sub in glob.glob(subs_pattern):
                  if potential_sub.startswith(video_base_prefix) or potential_sub == (file_path.rsplit('.', 1)[0] + ".srt"):
                      detected_subs.append(potential_sub)
-                     print(f"Including subtitle: {potential_sub}")
+            
+            # Filter based on settings
+            settings = get_settings_internal()
+            if settings.include_subtitles:
+                for s in detected_subs:
+                    print(f"Including subtitle: {s}")
+            else:
+                print("Subtitles disabled in settings. Skipping inclusion.")
+                detected_subs = []
 
             # Construct RAR command using RELATIVE PATHS (executed in work_dir)
             # This prevents Storing /data/Folder/File inside the RAR
@@ -425,3 +447,28 @@ def kill_process():
                 print(f"Error killing process: {e}")
             
     return {"status": "termination requested"}
+
+def get_settings_internal() -> Settings:
+    if not os.path.exists(SETTINGS_FILE):
+        return Settings()
+    try:
+        with open(SETTINGS_FILE, "r") as f:
+            import json
+            data = json.load(f)
+            return Settings(**data)
+    except:
+        return Settings()
+
+@app.get("/api/settings")
+def get_settings():
+    return get_settings_internal()
+
+@app.post("/api/settings")
+def save_settings(settings: Settings):
+    try:
+        os.makedirs(CONFIG_DIR, exist_ok=True)
+        with open(SETTINGS_FILE, "w") as f:
+            f.write(settings.model_dump_json(indent=2))
+        return settings
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

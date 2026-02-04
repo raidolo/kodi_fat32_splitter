@@ -1,7 +1,7 @@
 {
   "name": "kodi-fat32-splitter-frontend",
   "private": true,
-  "version": "1.0.5",
+  "version": "1.0.6",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,7 +15,9 @@
     "oidc-client-ts": "^2.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-oidc-context": "^2.3.1"
+    "react-oidc-context": "^2.3.1",
+    "react-router-dom": "^6.20.0",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useAppAuth } from "./auth/AuthProviderWrapper";
-import { LogIn, Film, LogOut, RefreshCw } from "lucide-react";
+import { Routes, Route, Link } from "react-router-dom";
+import { LogIn, Film, LogOut, RefreshCw, Settings as SettingsIcon } from "lucide-react";
 import FileBrowser from "./components/FileBrowser";
 import TaskControl from "./components/TaskControl";
 import ConfirmationModal from "./components/ConfirmationModal";
+import SettingsPage from "./pages/SettingsPage";
 import "./App.css";
 import { version } from "../package.json";
 
@@ -58,6 +60,9 @@ function App() {
         <div className="header-right">
           <div className="user-profile">
             <span className="username">{auth.user?.profile.preferred_username || auth.user?.profile.name}</span>
+            <Link to="/settings" className="btn-icon" title="Settings">
+              <SettingsIcon size={18} />
+            </Link>
             <button className="btn-icon btn-logout" title="Log Out" onClick={handleLogoutClick}>
               <LogOut size={18} />
             </button>
@@ -65,32 +70,38 @@ function App() {
         </div>
       </header>
 
-      <main className="dashboard-grid">
-        <TaskControl
-          selectedFiles={selectedFiles}
-          onTaskChange={setIsTaskRunning}
-          onTaskComplete={triggerRefresh}
-        />
+      <Routes>
+        <Route path="/" element={
+          <main className="dashboard-grid">
+            <TaskControl
+              selectedFiles={selectedFiles}
+              onTaskChange={setIsTaskRunning}
+              onTaskComplete={triggerRefresh}
+            />
 
-        <section className="manager-panel">
-          <div className="panel-header">
-            <h2>Files</h2>
-            <div className="panel-actions">
-              <span className="selection-info">
-                {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : 'No files selected'}
-              </span>
-            </div>
-          </div>
+            <section className="manager-panel">
+              <div className="panel-header">
+                <h2>Files</h2>
+                <div className="panel-actions">
+                  <span className="selection-info">
+                    {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : 'No files selected'}
+                  </span>
+                </div>
+              </div>
 
-          <FileBrowser
-            selectedFiles={selectedFiles}
-            onSelect={setSelectedFiles}
-            isLocked={isTaskRunning}
-            refreshTrigger={refreshTrigger}
-            onManualRefresh={triggerRefresh}
-          />
-        </section>
-      </main>
+              <FileBrowser
+                selectedFiles={selectedFiles}
+                onSelect={setSelectedFiles}
+                isLocked={isTaskRunning}
+                refreshTrigger={refreshTrigger}
+                onManualRefresh={triggerRefresh}
+              />
+            </section>
+          </main>
+        } />
+
+        <Route path="/settings" element={<SettingsPage />} />
+      </Routes>
 
       <footer className="app-footer">
         <p>Vibe Coded by Antigravity &bull; 2026 &bull; v{version}</p>

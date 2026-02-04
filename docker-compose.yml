@@ -6,6 +6,7 @@ services:
       - "8000:8000"
     volumes:
       - "C:/Users/raido/OneDrive/Documents/Development/rar splitter v2/data:/data"
+      - "./config:/config"
     restart: unless-stopped
 
   frontend:
