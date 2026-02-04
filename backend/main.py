@@ -450,7 +450,16 @@ def kill_process():
 
 def get_settings_internal() -> Settings:
     if not os.path.exists(SETTINGS_FILE):
-        return Settings()
+        defaults = Settings()
+        try:
+            os.makedirs(CONFIG_DIR, exist_ok=True)
+            with open(SETTINGS_FILE, "w") as f:
+                f.write(defaults.model_dump_json(indent=2))
+            print(f"Created default settings at {SETTINGS_FILE}")
+        except Exception as e:
+            print(f"Failed to create default settings: {e}")
+        return defaults
+
     try:
         with open(SETTINGS_FILE, "r") as f:
             import json

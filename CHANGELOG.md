@@ -2,6 +2,11 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.0.7] - 2026-02-04
+
+### 🐛 Bug Fixes
+- **Settings Persistence**: Fixed an issue where `settings.json` was not created with default values on the first run, causing settings to not persist correctly until manually saved.
+
 ## [v1.0.6] - 2026-02-04
 
 ### ⚙️ Settings System
