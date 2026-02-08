@@ -4,8 +4,11 @@ A modern, secure, and high-performance web dashboard designed to bridge the gap 
 
 
 <div align="center">
-  <img src="screenshots/main_interface.png" width="48%" alt="Main Interface" />
-  <img src="screenshots/settings.png" width="48%" alt="Settings Page" />
+  <img src="screenshots/initial_setup.png" width="45%" alt="Initial Setup" />
+  <img src="screenshots/login.png" width="45%" alt="Login Page" />
+  <br/>
+  <img src="screenshots/main_interface.png" width="45%" alt="Main Interface" />
+  <img src="screenshots/settings.png" width="45%" alt="Settings Page" />
 </div>
 ---
 

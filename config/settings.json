@@ -1,6 +1,6 @@
 {
   "theme": "dark",
   "include_subtitles": true,
-  "admin_email": "alessio.molteni@gmail.com",
-  "admin_password_hash": "$argon2id$v=19$m=65536,t=3,p=4$QCgFQMgZg9C6d06JUcrZew$/n5nwFr67644z784OWh4VzpMpml1AvxF6v0LDmW2zTI"
+  "admin_email": null,
+  "admin_password_hash": null
 }
