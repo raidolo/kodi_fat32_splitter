@@ -33,8 +33,8 @@ The easiest way to run the application is using the pre-built Docker images.
     ```
 
 3.  **Configure `.env`**:
-    By default, `OIDC_AUTH=false` (Mock Mode) is set for easy testing.
-    If you want to enable authentication, open `.env`, set `OIDC_AUTH=true`, and fill in your provider details (see [Authentication & Configuration](#-authentication--configuration) for details).
+    By default, `OIDC_AUTH=false` is set. The first time you launch the app, you will be asked to create a **Local Admin** account.
+    If you want to enable OIDC, open `.env`, set `OIDC_AUTH=true`, and fill in your provider details (see [Authentication & Configuration](#-authentication--configuration) for details).
 
 4.  **Run**:
     ```bash
@@ -60,7 +60,7 @@ The easiest way to run the application is using the pre-built Docker images.
 
 ## 🔐 Authentication & Configuration
 
-This project supports **OpenID Connect (OIDC)** for authentication. It can also run in a **Mock Mode** for local testing or secured networks.
+This project supports **OpenID Connect (OIDC)** for authentication. If you don't have an OIDC provider, it defaults to **Local Authentication Mode** where you create an admin account during setup.
 
 ### Configuration via Environment File
 Configuration is handled via a `.env` file in the root directory.
@@ -77,8 +77,8 @@ Configuration is handled via a `.env` file in the root directory.
     docker-compose up -d
     ```
 
-#### Disable OIDC (Mock Mode)
-To disable authentication for local testing, set `OIDC_AUTH=false` in your `.env` file.
+#### Disable OIDC (Local Authentication)
+To use a local admin account instead of OIDC, set `OIDC_AUTH=false` in your `.env` file. You will be prompted to create an admin account on the first run.
 
 ---
 
