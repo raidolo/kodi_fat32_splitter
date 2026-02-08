@@ -2,6 +2,11 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.0.11] - 2026-02-08
+
+### 🐛 Bug Fixes
+- **Production OIDC Logout**: Fixed a race condition where the `id_token` was cleared from the session before the logout redirect could be constructed, causing the redirect to fail in some environments.
+
 ## [v1.0.10] - 2026-02-08
 
 ### 🎨 UI & Polish

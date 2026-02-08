@@ -61,16 +61,20 @@ function App() {
 
   const confirmLogout = () => {
     sessionStorage.setItem('kodi_manual_logout', 'true');
+
+    // Capture token and config BEFORE logging out, as auth.logout() clears the user state
+    const idToken = auth.user?.id_token;
+    const config = getRuntimeConfig();
+
     auth.logout(); // Use the unified logout
     setIsLogoutModalOpen(false);
 
     // Redirect to OIDC provider logout if configured AND we have an OIDC session (id_token)
-    const config = getRuntimeConfig();
-    if (config.oidcLogout && auth.user?.id_token) {
+    if (config.oidcLogout && idToken) {
       const logoutUrl = new URL(config.oidcLogout);
       if (config.clientId) logoutUrl.searchParams.append('client_id', config.clientId);
       logoutUrl.searchParams.append('post_logout_redirect_uri', window.location.origin);
-      logoutUrl.searchParams.append('id_token_hint', auth.user.id_token);
+      logoutUrl.searchParams.append('id_token_hint', idToken);
       window.location.href = logoutUrl.toString();
     }
   };
