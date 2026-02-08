@@ -11,7 +11,10 @@ All notable changes to the `dev` branch are documented below.
     - Fixed overlap issues on the Setup page.
     - Removed duplicate footer from the Login page.
 
-### 🐛 Bug Fixes
+### 🛡️ Security & Authentication
+- **OIDC First-Run Experience**: 
+    - The first user to login via SSO is automatically promoted to Admin.
+    - **Fallback Password Requirement**: OIDC users are now prompted (via a critical warning in Settings) to set a local admin password to ensure access even if the identity provider is unavailable.
 - **Local Admin Logout**: Fixed logic to ensure local admins are redirected to the login page instead of the OIDC provider upon logout.
 - **Password Change Feedback**: Implemented global state for success messages (`useSettingsStore`) to prevent feedback from disappearing during component re-renders.
 
