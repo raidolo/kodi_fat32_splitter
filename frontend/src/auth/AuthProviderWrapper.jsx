@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthProvider, useAuth as useOidcAuth } from "react-oidc-context";
+import { WebStorageStateStore } from "oidc-client-ts";
 
 const RuntimeConfigContext = createContext(null);
 
@@ -17,6 +18,7 @@ export const getRuntimeConfig = () => {
         authority: get('OIDC_AUTHORITY', 'VITE_OIDC_AUTHORITY'),
         clientId: get('OIDC_CLIENT_ID', 'VITE_OIDC_CLIENT_ID'),
         clientSecret: get('OIDC_CLIENT_SECRET', 'VITE_OIDC_CLIENT_SECRET'),
+        oidcLogout: get('OIDC_LOGOUT', 'VITE_OIDC_LOGOUT'),
     };
 };
 
@@ -31,8 +33,11 @@ export const AuthProviderWrapper = ({ children }) => {
         client_id: config.clientId,
         client_secret: config.clientSecret,
         redirect_uri: window.location.origin,
+        silent_redirect_uri: window.location.origin + "/silent-renew.html",
         response_type: "code",
         scope: "openid profile email",
+        userStore: new WebStorageStateStore({ store: window.localStorage }),
+        automaticSilentRenew: true,
         onSigninCallback: () => {
             window.history.replaceState({}, document.title, window.location.pathname);
         }

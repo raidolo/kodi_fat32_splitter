@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Silent Renew</title>
+</head>
+
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/oidc-client-ts/2.4.0/oidc-client-ts.min.js"></script>
+    <script>
+        var mgr = new oidc.UserManager({});
+        mgr.signinSilentCallback().catch(function (error) {
+            console.error('silent renew error', error);
+        });
+    </script>
+</body>
+
+</html>

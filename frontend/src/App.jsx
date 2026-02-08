@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useAppAuth } from "./auth/AuthProviderWrapper";
+import { useState, useEffect } from "react";
+import { useAppAuth, getRuntimeConfig } from "./auth/AuthProviderWrapper";
 import { Routes, Route, Link } from "react-router-dom";
 import { LogIn, Film, LogOut, RefreshCw, Settings as SettingsIcon } from "lucide-react";
 import FileBrowser from "./components/FileBrowser";
@@ -25,10 +25,56 @@ function App() {
   };
 
   const confirmLogout = () => {
+    sessionStorage.setItem('kodi_manual_logout', 'true');
     auth.removeUser();
+    setIsLogoutModalOpen(false);
+
+    // Redirect to OIDC provider logout if configured
+    const config = getRuntimeConfig();
+    if (config.oidcLogout) {
+      const logoutUrl = new URL(config.oidcLogout);
+
+      if (config.clientId) {
+        logoutUrl.searchParams.append('client_id', config.clientId);
+      }
+
+      logoutUrl.searchParams.append('post_logout_redirect_uri', window.location.origin);
+
+      const idToken = auth.user?.id_token;
+      if (idToken) {
+        logoutUrl.searchParams.append('id_token_hint', idToken);
+      }
+
+      window.location.href = logoutUrl.toString();
+    }
   };
 
   // ... (auth checks remain same)
+
+  // Auto-Login: Redirect to IdP if not authenticated
+  useEffect(() => {
+    // Check if user manually logged out
+    const manualLogout = sessionStorage.getItem('kodi_manual_logout');
+
+    // Only attempt if not authenticated, not loading, using OIDC, AND NOT manually logged out
+    if (!auth.isAuthenticated && !auth.isLoading && auth.signinRedirect && !manualLogout) {
+      auth.signinRedirect();
+    }
+  }, [auth]);
+
+  // Check if user manually logged out - need to read this for rendering logic too
+  const manualLogout = sessionStorage.getItem('kodi_manual_logout');
+
+  if (auth.isLoading || (!auth.isAuthenticated && auth.signinRedirect && !manualLogout)) {
+    return (
+      <div className="app-container">
+        <div className="auth-notice">
+          <RefreshCw className="failed-icon spin" size={48} style={{ animation: 'spin 1s linear infinite' }} />
+          <p>Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!auth.isAuthenticated) {
     // ... (login screen remains same)
@@ -38,7 +84,10 @@ function App() {
           <Film size={64} className="logo-icon primary" />
           <h1>Kodi Fat32 Splitter</h1>
           <p>Secure High-Performance Media Management</p>
-          <button className="btn-primary btn-large" onClick={() => auth.signinRedirect()}>
+          <button className="btn-primary btn-large" onClick={() => {
+            sessionStorage.removeItem('kodi_manual_logout');
+            auth.signinRedirect();
+          }}>
             <LogIn size={20} />
             Login with OIDC
           </button>

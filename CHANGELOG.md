@@ -2,6 +2,14 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.0.9] - 2026-02-08
+
+### 🔐 Authentication & Security
+- **Enhanced OIDC Logout**:
+    - **End-Session Redirect**: Logging out now properly redirects to the Identity Provider (`OIDC_LOGOUT`) to invalidate the remote session.
+    - **Smart Parameters**: Automatically appends `client_id`, `post_logout_redirect_uri`, and `id_token_hint` for a seamless flow.
+    - **Loop Prevention**: Fixed a critical issue where the application would auto-login immediately after a manual logout.
+
 ## [v1.0.8] - 2026-02-04
 
 ### 🐛 Bug Fixes

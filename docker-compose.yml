@@ -21,4 +21,5 @@ services:
       - OIDC_AUTHORITY=${OIDC_AUTHORITY}
       - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
       - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
+      - OIDC_LOGOUT=${OIDC_LOGOUT}
     restart: unless-stopped
