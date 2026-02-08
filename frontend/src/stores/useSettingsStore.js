@@ -10,6 +10,9 @@ export const useSettingsStore = create((set, get) => ({
     },
     loading: false,
     error: null,
+    successMessage: null,
+
+    setSuccessMessage: (msg) => set({ successMessage: msg }),
 
     fetchSettings: async () => {
         set({ loading: true });

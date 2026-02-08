@@ -7,6 +7,18 @@ import glob
 from typing import List
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import Depends, status
+
+SECRET_KEY = "CHANGE_THIS_TO_A_SECURE_RANDOM_KEY_IN_PRODUCTION" # TODO: Move to env
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
 app = FastAPI()
 
@@ -38,6 +50,30 @@ class TaskStatus(BaseModel):
 class Settings(BaseModel):
     theme: str = "dark"
     include_subtitles: bool = True
+    admin_email: str | None = None
+    admin_password_hash: str | None = None
+
+class User(BaseModel):
+    email: str
+    is_admin: bool = False
+
+class UserInDB(User):
+    hashed_password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: str | None = None
+
+class SetupRequest(BaseModel):
+    email: str
+    password: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
 
 # Global State
@@ -53,6 +89,49 @@ class BackgroundTask:
         self.last_output = ""
 
 task_state = BackgroundTask()
+
+# Auth Utils
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+        token_data = TokenData(email=email)
+    except JWTError:
+        raise credentials_exception
+    
+    settings = get_settings_internal()
+    if settings.admin_email == token_data.email:
+        return User(email=settings.admin_email, is_admin=True)
+    
+    # Validation for other users (OIDC) would go here
+    # For now, only admin is stored locally
+    raise credentials_exception
+
+async def get_current_active_user(current_user: User = Depends(get_current_user)):
+    return current_user
 
 def get_directory_contents(subpath=""):
     # Secure path traversal check
@@ -479,11 +558,146 @@ def get_settings():
     return get_settings_internal()
 
 @app.post("/api/settings")
-def save_settings(settings: Settings):
+def save_settings(new_settings: Settings):
     try:
+        current = get_settings_internal()
+        
+        # Preserve sensitive data if not provided
+        if current.admin_password_hash:
+             new_settings.admin_password_hash = current.admin_password_hash
+        
+        if current.admin_email and not new_settings.admin_email:
+             new_settings.admin_email = current.admin_email
+
         os.makedirs(CONFIG_DIR, exist_ok=True)
         with open(SETTINGS_FILE, "w") as f:
-            f.write(settings.model_dump_json(indent=2))
-        return settings
+            f.write(new_settings.model_dump_json(indent=2))
+        return new_settings
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+@app.post("/api/admin/password")
+async def change_password(req: PasswordChangeRequest, current_user: User = Depends(get_current_active_user)):
+    settings = get_settings_internal()
+    
+    if not settings.admin_password_hash:
+        raise HTTPException(status_code=400, detail="No admin password set")
+
+    # Verify current password
+    if not verify_password(req.current_password, settings.admin_password_hash):
+         raise HTTPException(status_code=400, detail="Invalid current password")
+         
+    settings.admin_password_hash = get_password_hash(req.new_password)
+    
+    # Save directly to file to bypass the save_settings logic which might trigger recursion if we called it (though we didn't)
+    # Re-use save_settings logic manually or just write it.
+    try:
+        with open(SETTINGS_FILE, "w") as f:
+            f.write(settings.model_dump_json(indent=2))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+        
+    return {"status": "password updated"}
+
+@app.post("/api/setup")
+def setup_admin(request: SetupRequest):
+    settings = get_settings_internal()
+    if settings.admin_email:
+        raise HTTPException(status_code=400, detail="Setup already completed")
+    
+    hashed_password = get_password_hash(request.password)
+    settings.admin_email = request.email
+    settings.admin_password_hash = hashed_password
+    
+    save_settings(settings)
+    return {"status": "setup complete"}
+
+@app.post("/api/auth/login", response_model=Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    settings = get_settings_internal()
+    if not settings.admin_email:
+        # Fallback if no setup done? Or ensure setup is done first.
+         raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Setup not completed",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if form_data.username != settings.admin_email or not verify_password(form_data.password, settings.admin_password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": settings.admin_email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+class OidcPromoteRequest(BaseModel):
+    email: str
+
+@app.post("/api/auth/promote-oidc", response_model=Token)
+def promote_oidc_user(request: OidcPromoteRequest):
+    settings = get_settings_internal()
+    if settings.admin_email and settings.admin_email != request.email:
+         # If admin exists and email matches, valid re-login/sync?
+         # If doesn't match, error.
+         raise HTTPException(status_code=400, detail="Admin already exists")
+        
+    settings.admin_email = request.email
+    save_settings(settings)
+    
+    # Generate Token for this user so they can set password immediately
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": settings.admin_email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+class SetPasswordRequest(BaseModel):
+    new_password: str
+
+@app.post("/api/admin/set-password")
+async def set_initial_password(req: SetPasswordRequest, current_user: User = Depends(get_current_active_user)):
+    settings = get_settings_internal()
+    if settings.admin_password_hash:
+        raise HTTPException(status_code=400, detail="Password already set")
+        
+    settings.admin_password_hash = get_password_hash(req.new_password)
+    
+    try:
+        with open(SETTINGS_FILE, "w") as f:
+            f.write(settings.model_dump_json(indent=2))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+        
+    return {"status": "password set"}
+
+@app.get("/api/auth/status")
+def auth_status():
+    settings = get_settings_internal()
+    # Setup required if NO admin exists
+    setup_req = settings.admin_email is None
+    
+    # Password setup required if admin exists BUT has no password
+    pass_setup_req = settings.admin_email is not None and settings.admin_password_hash is None
+    
+    # Check OIDC (env var) - effectively passed via frontend config but backend can know too if needed
+    # For now frontend handles OIDC config.
+    
+    return {
+        "setup_required": setup_req,
+        "password_setup_required": pass_setup_req,
+        "oidc_enabled": False # Placeholder
+    }
+
+@app.get("/api/users/me", response_model=User)
+async def read_users_me(current_user: User = Depends(get_current_active_user)):
+    return current_user

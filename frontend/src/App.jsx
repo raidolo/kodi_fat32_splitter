@@ -1,24 +1,59 @@
 import { useState, useEffect } from "react";
 import { useAppAuth, getRuntimeConfig } from "./auth/AuthProviderWrapper";
-import { Routes, Route, Link } from "react-router-dom";
-import { LogIn, Film, LogOut, RefreshCw, Settings as SettingsIcon } from "lucide-react";
-import FileBrowser from "./components/FileBrowser";
-import TaskControl from "./components/TaskControl";
+import { Routes, Route, Link, Navigate, useNavigate } from "react-router-dom";
+import { Film, LogOut, Settings as SettingsIcon, RefreshCw } from "lucide-react";
 import ConfirmationModal from "./components/ConfirmationModal";
 import SettingsPage from "./pages/SettingsPage";
+import Dashboard from "./pages/Dashboard";
+import Setup from "./pages/Setup";
+import Login from "./pages/Login";
 import "./App.css";
 import { version } from "../package.json";
 
 function App() {
   const auth = useAppAuth();
-  const [selectedFiles, setSelectedFiles] = useState([]); // Array of selected files
-  const [isTaskRunning, setIsTaskRunning] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [setupRequired, setSetupRequired] = useState(null);
+  const [checkingSetup, setCheckingSetup] = useState(true);
 
-  const triggerRefresh = () => {
-    setRefreshTrigger(prev => prev + 1);
-  };
+  // Check setup status on mount
+  useEffect(() => {
+    fetch('/api/auth/status')
+      .then(res => res.json())
+      .then(data => {
+        setSetupRequired(data.setup_required);
+      })
+      .catch(err => console.error("Failed to check auth status", err))
+      .finally(() => setCheckingSetup(false));
+  }, []);
+
+  // Auto-promote OIDC user if setup is required
+  useEffect(() => {
+    if (setupRequired && auth.oidcEnabled && auth.isAuthenticated && auth.user?.profile?.email) {
+      console.log("Auto-promoting OIDC user as admin...");
+      fetch('/api/auth/promote-oidc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: auth.user.profile.email })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.access_token) {
+            // Store the token so we can set the password
+            auth.setAuthToken(data.access_token);
+            setSetupRequired(false);
+            // Redirect to settings to show the warning
+            window.location.href = '/settings';
+            console.log("OIDC User promoted to Admin, token received.");
+          } else if (data.status === 'promoted') {
+            // Fallback if no token returned (legacy check)
+            setSetupRequired(false);
+            window.location.href = '/settings';
+          }
+        })
+        .catch(err => console.error("Failed to promote OIDC user", err));
+    }
+  }, [setupRequired, auth.isAuthenticated, auth.user, auth.oidcEnabled]);
 
   const handleLogoutClick = () => {
     setIsLogoutModalOpen(true);
@@ -26,130 +61,69 @@ function App() {
 
   const confirmLogout = () => {
     sessionStorage.setItem('kodi_manual_logout', 'true');
-    auth.removeUser();
+    auth.logout(); // Use the unified logout
     setIsLogoutModalOpen(false);
 
-    // Redirect to OIDC provider logout if configured
+    // Redirect to OIDC provider logout if configured AND we have an OIDC session (id_token)
     const config = getRuntimeConfig();
-    if (config.oidcLogout) {
+    if (config.oidcLogout && auth.user?.id_token) {
       const logoutUrl = new URL(config.oidcLogout);
-
-      if (config.clientId) {
-        logoutUrl.searchParams.append('client_id', config.clientId);
-      }
-
+      if (config.clientId) logoutUrl.searchParams.append('client_id', config.clientId);
       logoutUrl.searchParams.append('post_logout_redirect_uri', window.location.origin);
-
-      const idToken = auth.user?.id_token;
-      if (idToken) {
-        logoutUrl.searchParams.append('id_token_hint', idToken);
-      }
-
+      logoutUrl.searchParams.append('id_token_hint', auth.user.id_token);
       window.location.href = logoutUrl.toString();
     }
   };
 
-  // ... (auth checks remain same)
-
-  // Auto-Login: Redirect to IdP if not authenticated
-  useEffect(() => {
-    // Check if user manually logged out
-    const manualLogout = sessionStorage.getItem('kodi_manual_logout');
-
-    // Only attempt if not authenticated, not loading, using OIDC, AND NOT manually logged out
-    if (!auth.isAuthenticated && !auth.isLoading && auth.signinRedirect && !manualLogout) {
-      auth.signinRedirect();
-    }
-  }, [auth]);
-
-  // Check if user manually logged out - need to read this for rendering logic too
-  const manualLogout = sessionStorage.getItem('kodi_manual_logout');
-
-  if (auth.isLoading || (!auth.isAuthenticated && auth.signinRedirect && !manualLogout)) {
+  if (auth.isLoading || checkingSetup) {
     return (
       <div className="app-container">
         <div className="auth-notice">
           <RefreshCw className="failed-icon spin" size={48} style={{ animation: 'spin 1s linear infinite' }} />
-          <p>Redirecting to login...</p>
+          <p>Loading...</p>
         </div>
       </div>
     );
   }
 
-  if (!auth.isAuthenticated) {
-    // ... (login screen remains same)
-    return (
-      <div className="app-container">
-        <div className="auth-notice">
-          <Film size={64} className="logo-icon primary" />
-          <h1>Kodi Fat32 Splitter</h1>
-          <p>Secure High-Performance Media Management</p>
-          <button className="btn-primary btn-large" onClick={() => {
-            sessionStorage.removeItem('kodi_manual_logout');
-            auth.signinRedirect();
-          }}>
-            <LogIn size={20} />
-            Login with OIDC
-          </button>
-        </div>
-        <footer className="app-footer">
-          <p>Vibe Coded by Antigravity &bull; 2026 &bull; v{version}</p>
-        </footer>
-      </div>
-    );
+  // Force setup if required
+  if (setupRequired) {
+    return <Setup />;
   }
 
   return (
     <div className="app-container">
-      <header className="app-header">
-        <div className="header-left">
-          <Film size={28} className="logo-icon" />
-          <h1>Kodi Fat32 Splitter</h1>
-        </div>
-        <div className="header-right">
-          <div className="user-profile">
-            <span className="username">{auth.user?.profile.preferred_username || auth.user?.profile.name}</span>
-            <Link to="/settings" className="btn-icon" title="Settings">
-              <SettingsIcon size={18} />
-            </Link>
-            <button className="btn-icon btn-logout" title="Log Out" onClick={handleLogoutClick}>
-              <LogOut size={18} />
-            </button>
+      {auth.isAuthenticated && (
+        <header className="app-header">
+          <div className="header-left">
+            <Film size={28} className="logo-icon" />
+            <h1>Kodi Fat32 Splitter</h1>
           </div>
-        </div>
-      </header>
+          <div className="header-right">
+            <div className="user-profile">
+              <span className="username">{auth.user?.profile?.preferred_username || auth.user?.profile?.name || "User"}</span>
+              <Link to="/settings" className="btn-icon" title="Settings">
+                <SettingsIcon size={18} />
+              </Link>
+              <button className="btn-icon btn-logout" title="Log Out" onClick={handleLogoutClick}>
+                <LogOut size={18} />
+              </button>
+            </div>
+          </div>
+        </header>
+      )}
 
       <Routes>
+        <Route path="/login" element={auth.isAuthenticated ? <Navigate to="/" /> : <Login />} />
+        <Route path="/setup" element={setupRequired ? <Setup /> : <Navigate to="/" />} />
+
         <Route path="/" element={
-          <main className="dashboard-grid">
-            <TaskControl
-              selectedFiles={selectedFiles}
-              onTaskChange={setIsTaskRunning}
-              onTaskComplete={triggerRefresh}
-            />
-
-            <section className="manager-panel">
-              <div className="panel-header">
-                <h2>Files</h2>
-                <div className="panel-actions">
-                  <span className="selection-info">
-                    {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : 'No files selected'}
-                  </span>
-                </div>
-              </div>
-
-              <FileBrowser
-                selectedFiles={selectedFiles}
-                onSelect={setSelectedFiles}
-                isLocked={isTaskRunning}
-                refreshTrigger={refreshTrigger}
-                onManualRefresh={triggerRefresh}
-              />
-            </section>
-          </main>
+          auth.isAuthenticated ? <Dashboard /> : <Navigate to="/login" />
         } />
 
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings" element={
+          auth.isAuthenticated ? <SettingsPage /> : <Navigate to="/login" />
+        } />
       </Routes>
 
       <footer className="app-footer">

@@ -2,6 +2,19 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.0.10] - 2026-02-08
+
+### 🎨 UI & Polish
+- **Unified Styling**: Login and Setup pages now match the Settings page aesthetic (consistent forms, green SSO buttons).
+- **Footer Improvements**: 
+    - Added version number (`v1.0.10`) to the global footer.
+    - Fixed overlap issues on the Setup page.
+    - Removed duplicate footer from the Login page.
+
+### 🐛 Bug Fixes
+- **Local Admin Logout**: Fixed logic to ensure local admins are redirected to the login page instead of the OIDC provider upon logout.
+- **Password Change Feedback**: Implemented global state for success messages (`useSettingsStore`) to prevent feedback from disappearing during component re-renders.
+
 ## [v1.0.9] - 2026-02-08
 
 ### 🔐 Authentication & Security
