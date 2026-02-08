@@ -5,24 +5,24 @@ A modern, secure, and high-performance web dashboard designed to bridge the gap 
 
 <table align="center">
   <tr>
-    <td align="center" width="50%">
+    <td align="center" valign="bottom" width="50%">
       <img src="screenshots/initial_setup.png" alt="Initial Setup" />
       <br />
       <b>Initial Setup</b>
     </td>
-    <td align="center" width="50%">
+    <td align="center" valign="bottom" width="50%">
       <img src="screenshots/login.png" alt="Login Page" />
       <br />
       <b>Login Page</b>
     </td>
   </tr>
   <tr>
-    <td align="center">
+    <td align="center" valign="bottom">
       <img src="screenshots/main_interface.png" alt="Main Interface" />
       <br />
       <b>Main Interface</b>
     </td>
-    <td align="center">
+    <td align="center" valign="bottom">
       <img src="screenshots/settings.png" alt="Settings Page" />
       <br />
       <b>Settings Page</b>
