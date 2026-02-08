@@ -2,6 +2,11 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.0.13] - 2026-02-09
+
+### 🐛 Bug Fixes
+- **Light Theme Readability**: Fixed an issue where the header title was unreadable (white on white) in Light Mode by introducing a theme-aware CSS variable.
+
 ## [v1.0.12] - 2026-02-08
 
 ### 🐛 Bug Fixes

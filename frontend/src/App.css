@@ -26,11 +26,11 @@
   font-size: 1.6rem;
   font-weight: 800;
   letter-spacing: -0.5px;
-  background: linear-gradient(90deg, #fff 0%, #888 100%);
+  background: var(--header-gradient);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  color: white;
+  color: var(--text-primary);
   /* Fallback */
 }
 

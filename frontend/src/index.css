@@ -9,6 +9,7 @@
   --danger-hover: #f85149;
   --border-color: #30363d;
   --primary-gradient: linear-gradient(135deg, #238636 0%, #2f81f7 100%);
+  --header-gradient: linear-gradient(90deg, #fff 0%, #888 100%);
 }
 
 /* Light Theme */
@@ -23,6 +24,7 @@
   --danger-hover: #a40e26;
   --border-color: #d0d7de;
   --primary-gradient: linear-gradient(90deg, #2da44e, #2c974b);
+  --header-gradient: linear-gradient(90deg, #24292f 0%, #57606a 100%);
 }
 
 /* Cyberpunk Theme */
@@ -37,6 +39,7 @@
   --danger-hover: #ff4080;
   --border-color: #00f0ff;
   --primary-gradient: linear-gradient(90deg, #fcee0a, #00f0ff);
+  --header-gradient: linear-gradient(90deg, #fcee0a 0%, #00f0ff 100%);
 
   /* Cyberpunk specific badging overrides */
   & .badge-size-green {
