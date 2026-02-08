@@ -2,8 +2,11 @@
 
 A modern, secure, and high-performance web dashboard designed to bridge the gap between large 4K/MKV media collections and **FAT32-formatted** drives. Now rewritten with a **React** frontend and secured with **OIDC Authentication**.
 
-![Main Interface](screenshots/main_interface.png)
 
+<div align="center">
+  <img src="screenshots/main_interface.png" width="48%" alt="Main Interface" />
+  <img src="screenshots/settings.png" width="48%" alt="Settings Page" />
+</div>
 ---
 
 ## 🚀 Key Features
