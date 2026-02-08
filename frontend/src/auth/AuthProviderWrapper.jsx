@@ -102,6 +102,7 @@ const UnifiedAuthContent = ({ children, oidcEnabled }) => {
         setAuthToken,
         logout,
         signinRedirect: oidcEnabled ? oidc.signinRedirect : () => { },
+        signoutRedirect: oidcEnabled ? oidc.signoutRedirect : () => { },
         oidcEnabled
     };
 

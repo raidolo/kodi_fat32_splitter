@@ -2,6 +2,11 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.0.12] - 2026-02-08
+
+### 🐛 Bug Fixes
+- **OIDC Logout Reliability**: switched to using the official `signoutRedirect` method from the OIDC library instead of manual URL construction. This ensures correct usage of the `end_session_endpoint` from the discovery document and proper `id_token__hint` handling.
+
 ## [v1.0.11] - 2026-02-08
 
 ### 🐛 Bug Fixes
