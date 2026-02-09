@@ -33,8 +33,11 @@ function App() {
       console.log("Auto-promoting OIDC user as admin...");
       fetch('/api/auth/promote-oidc', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: auth.user.profile.email })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.user.access_token}`
+        },
+        body: JSON.stringify({})
       })
         .then(res => res.json())
         .then(data => {

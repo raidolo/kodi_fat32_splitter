@@ -11,6 +11,8 @@ services:
     environment:
       - OIDC_AUTHORITY=${OIDC_AUTHORITY}
       - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
+      - SECRET_KEY=${SECRET_KEY}
+      - SETUP_ENABLED=${SETUP_ENABLED:-true}
 
   frontend:
     build: ./frontend

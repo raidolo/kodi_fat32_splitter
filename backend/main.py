@@ -15,9 +15,35 @@ from fastapi import Depends, status, Request
 import httpx
 import json
 
-SECRET_KEY = "CHANGE_THIS_TO_A_SECURE_RANDOM_KEY_IN_PRODUCTION" # TODO: Move to env
+# Security Configuration
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    import secrets
+    SECRET_KEY = secrets.token_hex(32)
+    print("WARNING: SECRET_KEY not set, using random key (tokens won't persist across restarts)")
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# Setup Control
+SETUP_ENABLED = os.getenv("SETUP_ENABLED", "true").lower() == "true"
+
+# Rate Limiting for Setup
+SETUP_RATE_LIMIT = {}  # {ip: [timestamp, ...]}
+SETUP_RATE_LIMIT_MAX = 5
+SETUP_RATE_LIMIT_WINDOW = 60  # seconds
+
+def check_rate_limit(ip: str) -> bool:
+    """Check if IP is rate limited. Returns True if request is allowed."""
+    current = time.time()
+    attempts = SETUP_RATE_LIMIT.get(ip, [])
+    # Remove old attempts outside window
+    attempts = [t for t in attempts if current - t < SETUP_RATE_LIMIT_WINDOW]
+    if len(attempts) >= SETUP_RATE_LIMIT_MAX:
+        return False
+    attempts.append(current)
+    SETUP_RATE_LIMIT[ip] = attempts
+    return True
 
 # OIDC Configuration
 OIDC_AUTHORITY = os.getenv("OIDC_AUTHORITY")
@@ -773,7 +799,16 @@ async def change_password(req: PasswordChangeRequest, current_user: User = Depen
     return {"status": "password updated"}
 
 @app.post("/api/setup")
-def setup_admin(request: SetupRequest):
+def setup_admin(request: SetupRequest, client_request: Request):
+    # Check if setup is enabled
+    if not SETUP_ENABLED:
+        raise HTTPException(status_code=403, detail="Setup is disabled")
+    
+    # Rate limiting
+    client_ip = client_request.client.host if client_request.client else "unknown"
+    if not check_rate_limit(client_ip):
+        raise HTTPException(status_code=429, detail="Too many requests. Try again later.")
+    
     settings = get_settings_internal()
     if settings.admin_email:
         raise HTTPException(status_code=400, detail="Setup already completed")
@@ -813,29 +848,40 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-class OidcPromoteRequest(BaseModel):
-    email: str
-
 @app.post("/api/auth/promote-oidc", response_model=Token)
-def promote_oidc_user(request: OidcPromoteRequest):
-    # This endpoint should probably be protected or only callable if no admin exists?
-    # It seems to be used to assume admin role if OIDC matches.
-    # Current logic:
+async def promote_oidc_user(request: Request):
+    """Promote an OIDC-authenticated user to admin. Requires valid OIDC token."""
+    # Extract and validate OIDC token from Authorization header
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="OIDC token required in Authorization header"
+        )
+    
+    oidc_token = auth_header.split(" ")[1]
+    
+    # Verify the OIDC token
+    try:
+        token_data = await validate_oidc_token(oidc_token)
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid OIDC token: {str(e)}"
+        )
+    
+    email = token_data.email
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email not found in OIDC token"
+        )
+    
     settings = get_settings_internal()
-    if settings.admin_email and settings.admin_email != request.email:
-         raise HTTPException(status_code=400, detail="Admin already exists")
+    if settings.admin_email and settings.admin_email.lower() != email.lower():
+        raise HTTPException(status_code=400, detail="Admin already exists")
     
-    # If admin doesn't exist, we allow promotion?
-    # This is slightly risky if anyone can hit it.
-    # But only if they know the email that WILL be admin.
-    # The logic in App.jsx checks auth.oidcEnabled && auth.isAuthenticated.
-    # To secure this, we might want to verify the OIDC token?
-    # But this backend doesn't know about OIDC provider details to verify token independently unless we pass it.
-    # For now, let's leave as is but note it. 
-    # Actually, it's safer if we require SOME auth, but this is bootstrap.
-    
-    settings.admin_email = request.email
-    # Don't save using route handler
+    settings.admin_email = email
     os.makedirs(CONFIG_DIR, exist_ok=True)
     with open(SETTINGS_FILE, "w") as f:
         f.write(settings.model_dump_json(indent=2))

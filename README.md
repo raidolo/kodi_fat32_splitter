@@ -109,6 +109,40 @@ To use a local admin account instead of OIDC, set `OIDC_AUTH=false` in your `.en
 
 ---
 
+## 🔒 Security Configuration
+
+### SECRET_KEY (JWT Signing)
+
+The `SECRET_KEY` is used to sign JWT tokens for local authentication. **For production, you should generate a strong random key.**
+
+> [!IMPORTANT]
+> If `SECRET_KEY` is not set, a random key is generated at startup. This means tokens will be invalidated after every container restart.
+
+**Generate a secure key:**
+
+**Linux/macOS:**
+```bash
+openssl rand -hex 32
+```
+
+**Windows (PowerShell):**
+```powershell
+-join ((1..32) | ForEach-Object { '{0:x2}' -f (Get-Random -Maximum 256) })
+```
+
+Add it to your `.env`:
+```ini
+SECRET_KEY=your-generated-key-here
+```
+
+### SETUP_ENABLED (Optional Hardening)
+
+After completing initial setup, you can disable the `/api/setup` endpoint for extra security:
+
+```ini
+SETUP_ENABLED=false
+```
+
 ## 🚦 Getting Started (Development)
 
 ### 1. Requirements

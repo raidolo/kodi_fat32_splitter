@@ -2,6 +2,19 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.1.2] - 2026-02-09
+
+### 🛡️ Security Fixes
+
+- **Protected `/api/auth/promote-oidc`**: This critical endpoint now requires a valid OIDC token in the `Authorization` header. Previously, it was unauthenticated and could allow unauthorized admin promotion.
+- **`SECRET_KEY` from Environment**: Moved JWT signing key from hardcoded value to environment variable. A random key is generated at startup if not set (with warning).
+- **Rate Limiting for `/api/setup`**: Added rate limiting (max 5 requests/minute per IP) to prevent brute-force attacks on the setup endpoint.
+- **`SETUP_ENABLED` Control**: New environment variable to disable the `/api/setup` endpoint after initial configuration.
+
+### ⚙️ Configuration
+
+- Added `SECRET_KEY` and `SETUP_ENABLED` to `.env.example`, `docker-compose.yml`, and `docker-compose.release.yml`.
+
 ## [v1.1.1] - 2026-02-09
 
 ### 🚀 Performance
