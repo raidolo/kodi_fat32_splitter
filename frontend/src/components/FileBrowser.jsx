@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Folder, File, ChevronLeft, Trash2, CheckCircle2, AlertTriangle, Loader2, RefreshCw, CheckSquare, XSquare } from 'lucide-react';
 import ConfirmationModal from './ConfirmationModal';
+import { useAppAuth } from '../auth/AuthProviderWrapper';
 
 const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManualRefresh }) => {
+    const { user } = useAppAuth();
     const [currentPath, setCurrentPath] = useState('');
     const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -15,6 +17,11 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
     const [fileToDelete, setFileToDelete] = useState(null);
 
     const FAT32_LIMIT = 4095 * 1024 * 1024; // 4095 MB in bytes
+
+    const getAuthHeaders = () => {
+        const token = user?.token || user?.access_token;
+        return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    };
 
     const formatBytes = (bytes, decimals = 1) => {
         if (!+bytes) return '0 B';
@@ -36,7 +43,7 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
         setLoading(true);
         setExpandedFiles({}); // Reset expansion on navigation
         try {
-            const response = await axios.get(`/api/files?path=${encodeURIComponent(path)}`);
+            const response = await axios.get(`/api/files?path=${encodeURIComponent(path)}`, getAuthHeaders());
             // Backend returns explicit 'folders' and 'files' lists. We merge them for the UI.
             const combined = [
                 ...response.data.folders.map(f => ({ ...f, is_dir: true })),
@@ -123,13 +130,13 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
                 await axios.post('/api/delete_rars', {
                     path: fullPath,
                     mode: 'single'
-                });
+                }, getAuthHeaders());
             } else if (deleteMode === 'all') {
                 const targetDir = currentPath || '';
                 await axios.post('/api/delete_rars', {
                     path: targetDir,
                     mode: 'all'
-                });
+                }, getAuthHeaders());
             }
 
             setIsModalOpen(false);

@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Play, Square, Loader2, Info } from 'lucide-react';
+import { useAppAuth } from '../auth/AuthProviderWrapper';
 
 const TaskControl = ({ selectedFiles, onTaskChange, onTaskComplete }) => {
+    const { user } = useAppAuth();
     const [status, setStatus] = useState({ is_running: false, progress: 0, last_output: '' });
     const [lastStatusRunning, setLastStatusRunning] = useState(false);
     const [loading, setLoading] = useState(false);
     const [stopFeedback, setStopFeedback] = useState(null); // Feedback message state
 
+    const getAuthHeaders = () => {
+        const token = user?.token || user?.access_token;
+        return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    };
+
     const fetchStatus = async () => {
         try {
-            const response = await axios.get('/api/status');
+            const response = await axios.get('/api/status', getAuthHeaders());
             setStatus(response.data);
             onTaskChange(response.data.is_running);
 
@@ -28,7 +35,7 @@ const TaskControl = ({ selectedFiles, onTaskChange, onTaskComplete }) => {
         fetchStatus(); // Fetch immediately
         const interval = setInterval(fetchStatus, 2000);
         return () => clearInterval(interval);
-    }, [lastStatusRunning]);
+    }, [lastStatusRunning, user?.token, user?.access_token]);
 
     const handleStart = async () => {
         if (!selectedFiles || selectedFiles.length === 0) return;
@@ -37,7 +44,7 @@ const TaskControl = ({ selectedFiles, onTaskChange, onTaskComplete }) => {
         try {
             await axios.post('/api/split', {
                 files: selectedFiles.map(f => f.name)  // Extract path strings from array
-            });
+            }, getAuthHeaders());
             fetchStatus();
         } catch (error) {
             console.error('Error starting task:', error);
@@ -50,7 +57,7 @@ const TaskControl = ({ selectedFiles, onTaskChange, onTaskComplete }) => {
     const handleKill = async () => {
         setLoading(true);
         try {
-            await axios.post('/api/kill');
+            await axios.post('/api/kill', {}, getAuthHeaders());
             setStopFeedback("Process stopped by user"); // Set feedback message
             fetchStatus();
         } catch (error) {

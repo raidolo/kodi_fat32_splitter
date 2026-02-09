@@ -4,7 +4,7 @@ import { Film, UserPlus, Shield } from 'lucide-react';
 import { useAppAuth } from '../auth/AuthProviderWrapper';
 import { version } from '../../package.json';
 
-const Setup = () => {
+const Setup = ({ onSetupComplete }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -41,6 +41,7 @@ const Setup = () => {
             }
 
             // Redirect to login after successful setup
+            if (onSetupComplete) onSetupComplete();
             navigate('/login');
         } catch (err) {
             setError(err.message);

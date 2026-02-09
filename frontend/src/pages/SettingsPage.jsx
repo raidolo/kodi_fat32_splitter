@@ -16,8 +16,10 @@ const SettingsPage = () => {
     const [pwLoading, setPwLoading] = useState(false);
 
     useEffect(() => {
-        fetchSettings();
-    }, [fetchSettings]);
+        if (user) {
+            fetchSettings(user.token || user.access_token);
+        }
+    }, [fetchSettings, user]);
 
     // Clear success message after 5 seconds
     useEffect(() => {
@@ -31,10 +33,10 @@ const SettingsPage = () => {
 
     // Check if password setup is required based on backend status or local flag (if passed)
     // We can infer it: if admin_email is set but password hash is null.
-    const passwordMissing = settings.admin_email && !settings.admin_password_hash;
+    const passwordMissing = settings.admin_email && settings.password_set === false;
 
     const handleChange = (key, value) => {
-        updateSettings({ [key]: value });
+        updateSettings({ [key]: value }, user?.token || user?.access_token);
     };
 
     const handlePasswordChange = async (e) => {

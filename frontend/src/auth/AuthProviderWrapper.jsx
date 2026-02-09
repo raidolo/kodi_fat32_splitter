@@ -11,7 +11,6 @@ export const getRuntimeConfig = () => {
         oidcAuth: get('OIDC_AUTH', 'VITE_OIDC_AUTH') === 'true',
         authority: get('OIDC_AUTHORITY', 'VITE_OIDC_AUTHORITY'),
         clientId: get('OIDC_CLIENT_ID', 'VITE_OIDC_CLIENT_ID'),
-        clientSecret: get('OIDC_CLIENT_SECRET', 'VITE_OIDC_CLIENT_SECRET'),
         oidcLogout: get('OIDC_LOGOUT', 'VITE_OIDC_LOGOUT'),
     };
 };
@@ -120,7 +119,6 @@ export const AuthProviderWrapper = ({ children }) => {
         const oidcConfig = {
             authority: config.authority,
             client_id: config.clientId,
-            client_secret: config.clientSecret,
             redirect_uri: window.location.origin,
             silent_redirect_uri: window.location.origin + "/silent-renew.html",
             response_type: "code",

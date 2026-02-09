@@ -2,6 +2,30 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.1.0] - 2026-02-09
+
+### 🛡️ Security Overhaul
+This release introduces a major security hardening of the application, particularly focusing on OIDC integration and API protection.
+
+- **OIDC Configuration (Breaking Change)**: 
+    - The application now strictly enforces the **PKCE (Proof Key for Code Exchange)** flow.
+    - **Action Required**: You must update your Identity Provider (e.g., Pocket ID) client configuration to be **Public** (confidentiality disabled) and enable **PKCE**.
+    - Removed usage of `OIDC_CLIENT_SECRET` from all frontend and backend configurations.
+    - Added **Dynamic OIDC Discovery**: The backend now automatically fetches `jwks_uri` and `userinfo_endpoint` from `/.well-known/openid-configuration`, ensuring compatibility with various providers (tested with Pocket ID).
+    - **Backend Token Validation**: Implemented strict validation of OIDC tokens (RS256) on the backend using remote JWKS. This prevents unverified access to protected resources.
+
+- **API Hardening**:
+    - **Endpoint Protection**: All sensitive API endpoints (`/api/files`, `/api/split`, `/api/delete_rars`) now require authentication.
+    - **Data Sanitization**: The `/api/settings` endpoint no longer returns the `admin_password_hash`. A new `password_set` boolean is returned instead.
+    - **UserInfo Fallback**: Backend now correctly fetches user email from the UserInfo endpoint if it's missing from the Access Token claims.
+
+### ✨ UX Improvements
+- **Improved Setup Flow**: After creating the initial local admin account, you are now automatically redirected to the Login page instead of remaining on the Setup screen.
+- **Smart Warnings**: The "Missing Fallback Password" warning in Settings now correctly tracks the password state even with the hash redacted from the API.
+
+### 🐛 Bug Fixes
+- Fixed an issue where OIDC users could login but were unable to view files due to backend token rejection (`HS256` vs `RS256` mismatch).
+
 ## [v1.0.13] - 2026-02-09
 
 ### 🐛 Bug Fixes

@@ -87,7 +87,7 @@ function App() {
 
   // Force setup if required
   if (setupRequired) {
-    return <Setup />;
+    return <Setup onSetupComplete={() => setSetupRequired(false)} />;
   }
 
   return (

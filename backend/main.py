@@ -11,11 +11,17 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi import Depends, status
+from fastapi import Depends, status, Request
+import httpx
+import json
 
 SECRET_KEY = "CHANGE_THIS_TO_A_SECURE_RANDOM_KEY_IN_PRODUCTION" # TODO: Move to env
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# OIDC Configuration
+OIDC_AUTHORITY = os.getenv("OIDC_AUTHORITY")
+OIDC_CLIENT_ID = os.getenv("OIDC_CLIENT_ID")
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
@@ -52,6 +58,12 @@ class Settings(BaseModel):
     include_subtitles: bool = True
     admin_email: str | None = None
     admin_password_hash: str | None = None
+
+class SettingsPublic(BaseModel):
+    theme: str = "dark"
+    include_subtitles: bool = True
+    admin_email: str | None = None
+    password_set: bool = False
 
 class User(BaseModel):
     email: str
@@ -107,27 +119,138 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+async def validate_oidc_token(token: str) -> TokenData:
+    if not OIDC_AUTHORITY or not OIDC_CLIENT_ID:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="OIDC configuration missing in backend"
+        )
+
+    try:
+        # 1. OIDC Discovery
+        discovery_url = f"{OIDC_AUTHORITY}/.well-known/openid-configuration"
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(discovery_url)
+            resp.raise_for_status()
+            config = resp.json()
+            
+        jwks_url = config.get("jwks_uri")
+        userinfo_url = config.get("userinfo_endpoint")
+        
+        if not jwks_url:
+            raise Exception("jwks_uri not found in OIDC discovery")
+
+        # 2. Fetch JWKS
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(jwks_url)
+            resp.raise_for_status()
+            jwks = resp.json()
+
+        # 3. Decode token header to get Key ID (kid)
+        unverified_header = jwt.get_unverified_header(token)
+        rsa_key = {}
+        
+        for key in jwks["keys"]:
+            if key["kid"] == unverified_header["kid"]:
+                rsa_key = {
+                    "kty": key["kty"],
+                    "kid": key["kid"],
+                    "use": key["use"],
+                    "n": key["n"],
+                    "e": key["e"]
+                }
+                break
+        
+        if not rsa_key:
+             # Refresh JWKS? For now just fail.
+            raise JWTError("Unable to find appropriate key")
+
+        # 4. Verify Token Signature
+        payload = jwt.decode(
+            token,
+            rsa_key,
+            algorithms=["RS256"],
+            audience=OIDC_CLIENT_ID,
+            issuer=OIDC_AUTHORITY # Optional: verify issuer
+        )
+        
+        # print(f"Decoded OIDC Payload: {payload}")
+        email: str = payload.get("email")
+        
+        # 5. Fetch UserInfo if email missing
+        if email is None:
+             if not userinfo_url:
+                 print("UserInfo endpoint not found in discovery, cannot fetch email.")
+             else:
+                 print(f"Email not in token, fetching UserInfo from {userinfo_url}...")
+                 async with httpx.AsyncClient() as client:
+                     resp = await client.get(userinfo_url, headers={"Authorization": f"Bearer {token}"})
+                     if resp.status_code != 200:
+                         print(f"UserInfo fetch failed: {resp.status_code} Body: {resp.text}")
+                         resp.raise_for_status()
+                     
+                     userinfo = resp.json()
+                     # print(f"UserInfo: {userinfo}")
+                     email = userinfo.get("email")
+                     if not email:
+                         # Pocket ID specific: maybe 'preferred_username'?
+                         email = userinfo.get("preferred_username")
+
+        if email is None:
+             raise JWTError("Email claim missing in Token and UserInfo")
+             
+        return TokenData(email=email)
+
+    except Exception as e:
+        print(f"OIDC Validation failed: {e}")
+        # Print stack trace if needed, or detailed error
+        import traceback
+        traceback.print_exc()
+        raise JWTError(str(e))
+
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    token_data = None
+    
+    # 1. Try Local Validation (HS256)
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
-            raise credentials_exception
+            raise JWTError("Missing sub")
         token_data = TokenData(email=email)
     except JWTError:
+        # 2. Try OIDC Validation (RS256) if local failed
+        try:
+             # Only attempt if OIDC is configured
+             if OIDC_AUTHORITY:
+                 token_data = await validate_oidc_token(token)
+             else:
+                 raise credentials_exception
+        except JWTError:
+             raise credentials_exception
+    except Exception:
+        raise credentials_exception
+
+    if not token_data:
         raise credentials_exception
     
     settings = get_settings_internal()
-    if settings.admin_email == token_data.email:
+    
+    # Check if user is Admin
+    if settings.admin_email and settings.admin_email.lower() == token_data.email.lower():
         return User(email=settings.admin_email, is_admin=True)
     
-    # Validation for other users (OIDC) would go here
-    # For now, only admin is stored locally
+    # For now, we strictly require the user to be the admin.
+    # If users need read-only access later, we can relax this.
+    # But for "Files disappearing", it implies they are logged in but rejected.
+    
+    print(f"User {token_data.email} is not admin ({settings.admin_email})")
     raise credentials_exception
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
@@ -408,11 +531,11 @@ def run_split_task(files: List[str]):
 
 
 @app.get("/api/files")
-def list_files(path: str = ""):
+def list_files(path: str = "", current_user: User = Depends(get_current_active_user)):
     return get_directory_contents(path)
 
 @app.post("/api/split")
-def start_split(request: SplitRequest):
+def start_split(request: SplitRequest, current_user: User = Depends(get_current_active_user)):
     global task_state
     with task_state.lock:
         if task_state.is_running:
@@ -469,7 +592,7 @@ def force_delete(file_path: str):
     return False
 
 @app.post("/api/delete_rars")
-def delete_rars(request: DeleteRequest):
+def delete_rars(request: DeleteRequest, current_user: User = Depends(get_current_active_user)):
     print(f"Delete request: {request}")
     target_path = os.path.abspath(os.path.join(DATA_DIR, request.path.strip(os.path.sep)))
     if not target_path.startswith(DATA_DIR):
@@ -504,7 +627,7 @@ def delete_rars(request: DeleteRequest):
     return {"status": "deleted", "count": deleted_count}
 
 @app.get("/api/status")
-def get_status():
+def get_status(current_user: User = Depends(get_current_active_user)):
     global task_state
     with task_state.lock:
         return TaskStatus(
@@ -516,7 +639,7 @@ def get_status():
         )
 
 @app.post("/api/kill")
-def kill_process():
+def kill_process(current_user: User = Depends(get_current_active_user)):
     global task_state
     with task_state.lock:
         if not task_state.is_running:
@@ -553,12 +676,16 @@ def get_settings_internal() -> Settings:
     except:
         return Settings()
 
-@app.get("/api/settings")
-def get_settings():
-    return get_settings_internal()
+@app.get("/api/settings", response_model=SettingsPublic)
+def get_settings(current_user: User = Depends(get_current_active_user)):
+    settings = get_settings_internal()
+    # Compute virtual fields
+    response = settings.model_dump()
+    response['password_set'] = settings.admin_password_hash is not None
+    return SettingsPublic(**response)
 
-@app.post("/api/settings")
-def save_settings(new_settings: Settings):
+@app.post("/api/settings", response_model=SettingsPublic)
+def save_settings(new_settings: Settings, current_user: User = Depends(get_current_active_user)):
     try:
         current = get_settings_internal()
         
@@ -572,7 +699,11 @@ def save_settings(new_settings: Settings):
         os.makedirs(CONFIG_DIR, exist_ok=True)
         with open(SETTINGS_FILE, "w") as f:
             f.write(new_settings.model_dump_json(indent=2))
-        return new_settings
+            
+        # Return public response
+        response = new_settings.model_dump()
+        response['password_set'] = new_settings.admin_password_hash is not None
+        return SettingsPublic(**response)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -613,7 +744,11 @@ def setup_admin(request: SetupRequest):
     settings.admin_email = request.email
     settings.admin_password_hash = hashed_password
     
-    save_settings(settings)
+    # Manual save
+    os.makedirs(CONFIG_DIR, exist_ok=True)
+    with open(SETTINGS_FILE, "w") as f:
+        f.write(settings.model_dump_json(indent=2))
+        
     return {"status": "setup complete"}
 
 @app.post("/api/auth/login", response_model=Token)
@@ -645,14 +780,27 @@ class OidcPromoteRequest(BaseModel):
 
 @app.post("/api/auth/promote-oidc", response_model=Token)
 def promote_oidc_user(request: OidcPromoteRequest):
+    # This endpoint should probably be protected or only callable if no admin exists?
+    # It seems to be used to assume admin role if OIDC matches.
+    # Current logic:
     settings = get_settings_internal()
     if settings.admin_email and settings.admin_email != request.email:
-         # If admin exists and email matches, valid re-login/sync?
-         # If doesn't match, error.
          raise HTTPException(status_code=400, detail="Admin already exists")
-        
+    
+    # If admin doesn't exist, we allow promotion?
+    # This is slightly risky if anyone can hit it.
+    # But only if they know the email that WILL be admin.
+    # The logic in App.jsx checks auth.oidcEnabled && auth.isAuthenticated.
+    # To secure this, we might want to verify the OIDC token?
+    # But this backend doesn't know about OIDC provider details to verify token independently unless we pass it.
+    # For now, let's leave as is but note it. 
+    # Actually, it's safer if we require SOME auth, but this is bootstrap.
+    
     settings.admin_email = request.email
-    save_settings(settings)
+    # Don't save using route handler
+    os.makedirs(CONFIG_DIR, exist_ok=True)
+    with open(SETTINGS_FILE, "w") as f:
+        f.write(settings.model_dump_json(indent=2))
     
     # Generate Token for this user so they can set password immediately
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

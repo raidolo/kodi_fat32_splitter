@@ -14,10 +14,11 @@ export const useSettingsStore = create((set, get) => ({
 
     setSuccessMessage: (msg) => set({ successMessage: msg }),
 
-    fetchSettings: async () => {
+    fetchSettings: async (token) => {
         set({ loading: true });
         try {
-            const response = await axios.get(`${API_URL}/settings`);
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            const response = await axios.get(`${API_URL}/settings`, { headers });
             const newSettings = response.data;
             set({ settings: newSettings, loading: false });
 
@@ -31,7 +32,7 @@ export const useSettingsStore = create((set, get) => ({
         }
     },
 
-    updateSettings: async (newSettings) => {
+    updateSettings: async (newSettings, token) => {
         // Optimistic Update
         const oldSettings = get().settings;
         const updated = { ...oldSettings, ...newSettings };
@@ -44,7 +45,8 @@ export const useSettingsStore = create((set, get) => ({
         }
 
         try {
-            await axios.post(`${API_URL}/settings`, updated);
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            await axios.post(`${API_URL}/settings`, updated, { headers });
         } catch (error) {
             console.error('Failed to update settings:', error);
             set({ settings: oldSettings, error: error.message }); // Revert
