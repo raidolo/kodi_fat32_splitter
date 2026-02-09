@@ -6,9 +6,12 @@
 </head>
 
 <body>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/oidc-client-ts/2.4.0/oidc-client-ts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/oidc-client-ts/3.0.1/oidc-client-ts.min.js"></script>
     <script>
-        var mgr = new oidc.UserManager({});
+        // Ensure we match the parent's storage strategy (localStorage)
+        var mgr = new oidc.UserManager({
+            userStore: new oidc.WebStorageStateStore({ store: window.localStorage })
+        });
         mgr.signinSilentCallback().catch(function (error) {
             console.error('silent renew error', error);
         });

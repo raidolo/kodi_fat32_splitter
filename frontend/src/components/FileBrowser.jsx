@@ -19,7 +19,7 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
     const FAT32_LIMIT = 4095 * 1024 * 1024; // 4095 MB in bytes
 
     const getAuthHeaders = () => {
-        const token = user?.token || user?.access_token;
+        const token = user?.token;
         return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
     };
 
@@ -60,9 +60,11 @@ const FileBrowser = ({ selectedFiles, onSelect, isLocked, refreshTrigger, onManu
     };
 
     useEffect(() => {
-        // Fetch files when component mounts, or when path/refreshTrigger changes
-        fetchFiles(currentPath);
-    }, [refreshTrigger, currentPath]);
+        // Fetch files when component mounts, or when path/refreshTrigger/user changes
+        if (user) {
+            fetchFiles(currentPath);
+        }
+    }, [refreshTrigger, currentPath, user]);
 
     const handleFolderClick = (name) => {
         const newPath = currentPath ? `${currentPath}/${name}` : name;

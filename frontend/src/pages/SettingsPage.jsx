@@ -17,7 +17,7 @@ const SettingsPage = () => {
 
     useEffect(() => {
         if (user) {
-            fetchSettings(user.token || user.access_token);
+            fetchSettings(user.token);
         }
     }, [fetchSettings, user]);
 
@@ -36,7 +36,7 @@ const SettingsPage = () => {
     const passwordMissing = settings.admin_email && settings.password_set === false;
 
     const handleChange = (key, value) => {
-        updateSettings({ [key]: value }, user?.token || user?.access_token);
+        updateSettings({ [key]: value }, user?.token);
     };
 
     const handlePasswordChange = async (e) => {

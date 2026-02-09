@@ -2,6 +2,19 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.1.1] - 2026-02-09
+
+### 🚀 Performance
+
+- **OIDC Caching**: Implemented caching for OIDC Discovery and JWKS (1-hour TTL), preventing repeated calls to the Identity Provider on every API request.
+- **UserInfo Caching**: Added per-token UserInfo caching (5-minute TTL) to avoid rate-limiting ("Too Many Requests" errors) from the OIDC provider.
+
+### 🐛 Bug Fixes
+
+- **Page Refresh Persistence**: Fixed a race condition where the `FileBrowser` component would show an empty list after a page refresh because authentication state was not yet restored.
+- **Silent Renew**: Updated `silent-renew.html` to use a compatible `oidc-client-ts` version and correct storage strategy, preventing authentication loops.
+- **Session Monitoring**: Disabled `monitorSession` to prevent aggressive polling of the Identity Provider.
+
 ## [v1.1.0] - 2026-02-09
 
 ### 🛡️ Security Overhaul

@@ -91,7 +91,25 @@ const UnifiedAuthContent = ({ children, oidcEnabled }) => {
 
     const isAuthenticated = (oidcEnabled && oidc.isAuthenticated) || !!localToken;
     const isLoading = (oidcEnabled && oidc.isLoading) || loadingLocal;
-    const user = (oidcEnabled && oidc.user) ? oidc.user : (localUser ? { ...localUser, token: localToken } : null);
+
+    // Normalize user object
+    let user = null;
+    if (isAuthenticated) {
+        if (oidcEnabled && oidc.user) {
+            user = {
+                ...oidc.user,
+                email: oidc.user.profile.email || oidc.user.profile.preferred_username,
+                token: oidc.user.access_token,
+                isOidc: true
+            };
+        } else if (localUser) {
+            user = {
+                ...localUser,
+                token: localToken,
+                isOidc: false
+            };
+        }
+    }
 
     const value = {
         isAuthenticated,
@@ -127,7 +145,8 @@ export const AuthProviderWrapper = ({ children }) => {
             automaticSilentRenew: true,
             onSigninCallback: () => {
                 window.history.replaceState({}, document.title, window.location.pathname);
-            }
+            },
+            monitorSession: false // Disable session monitoring to prevent polling loops
         };
 
         return (

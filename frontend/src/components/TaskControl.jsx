@@ -11,7 +11,7 @@ const TaskControl = ({ selectedFiles, onTaskChange, onTaskComplete }) => {
     const [stopFeedback, setStopFeedback] = useState(null); // Feedback message state
 
     const getAuthHeaders = () => {
-        const token = user?.token || user?.access_token;
+        const token = user?.token;
         return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
     };
 
@@ -35,7 +35,7 @@ const TaskControl = ({ selectedFiles, onTaskChange, onTaskComplete }) => {
         fetchStatus(); // Fetch immediately
         const interval = setInterval(fetchStatus, 2000);
         return () => clearInterval(interval);
-    }, [lastStatusRunning, user?.token, user?.access_token]);
+    }, [lastStatusRunning, user?.token]);
 
     const handleStart = async () => {
         if (!selectedFiles || selectedFiles.length === 0) return;

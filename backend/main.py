@@ -23,6 +23,18 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 OIDC_AUTHORITY = os.getenv("OIDC_AUTHORITY")
 OIDC_CLIENT_ID = os.getenv("OIDC_CLIENT_ID")
 
+# Cache for OIDC Discovery and JWKS
+OIDC_CACHE = {
+    "config": None,
+    "jwks": None,
+    "last_updated": 0,
+    "ttl": 3600  # 1 hour
+}
+
+# Cache for UserInfo (keyed by token hash, short TTL)
+USERINFO_CACHE = {}  # {token_hash: {"email": ..., "expires": timestamp}}
+USERINFO_CACHE_TTL = 300  # 5 minutes
+
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
@@ -127,24 +139,39 @@ async def validate_oidc_token(token: str) -> TokenData:
         )
 
     try:
-        # 1. OIDC Discovery
-        discovery_url = f"{OIDC_AUTHORITY}/.well-known/openid-configuration"
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(discovery_url)
-            resp.raise_for_status()
-            config = resp.json()
-            
-        jwks_url = config.get("jwks_uri")
-        userinfo_url = config.get("userinfo_endpoint")
+        current_time = time.time()
         
-        if not jwks_url:
-            raise Exception("jwks_uri not found in OIDC discovery")
+        # Check cache (TTL 1 hour)
+        if (OIDC_CACHE["config"] and OIDC_CACHE["jwks"] and 
+            (current_time - OIDC_CACHE["last_updated"] < OIDC_CACHE["ttl"])):
+            config = OIDC_CACHE["config"]
+            jwks = OIDC_CACHE["jwks"]
+        else:
+            print("Fetching OIDC configuration...")
+            # 1. OIDC Discovery
+            discovery_url = f"{OIDC_AUTHORITY}/.well-known/openid-configuration"
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(discovery_url)
+                resp.raise_for_status()
+                config = resp.json()
+            
+            jwks_url = config.get("jwks_uri")
+            if not jwks_url:
+                raise Exception("jwks_uri not found in OIDC discovery")
 
-        # 2. Fetch JWKS
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(jwks_url)
-            resp.raise_for_status()
-            jwks = resp.json()
+            # 2. Fetch JWKS
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(jwks_url)
+                resp.raise_for_status()
+                jwks = resp.json()
+            
+            # Update Cache
+            OIDC_CACHE["config"] = config
+            OIDC_CACHE["jwks"] = jwks
+            OIDC_CACHE["last_updated"] = current_time
+            print("OIDC Cache updated.")
+
+        userinfo_url = config.get("userinfo_endpoint")
 
         # 3. Decode token header to get Key ID (kid)
         unverified_header = jwt.get_unverified_header(token)
@@ -179,7 +206,13 @@ async def validate_oidc_token(token: str) -> TokenData:
         
         # 5. Fetch UserInfo if email missing
         if email is None:
-             if not userinfo_url:
+             # Check UserInfo cache first
+             import hashlib
+             token_hash = hashlib.sha256(token.encode()).hexdigest()[:16]
+             cached = USERINFO_CACHE.get(token_hash)
+             if cached and cached.get("expires", 0) > time.time():
+                 email = cached.get("email")
+             elif not userinfo_url:
                  print("UserInfo endpoint not found in discovery, cannot fetch email.")
              else:
                  print(f"Email not in token, fetching UserInfo from {userinfo_url}...")
@@ -190,11 +223,16 @@ async def validate_oidc_token(token: str) -> TokenData:
                          resp.raise_for_status()
                      
                      userinfo = resp.json()
-                     # print(f"UserInfo: {userinfo}")
                      email = userinfo.get("email")
                      if not email:
-                         # Pocket ID specific: maybe 'preferred_username'?
                          email = userinfo.get("preferred_username")
+                     
+                     # Cache result
+                     if email:
+                         USERINFO_CACHE[token_hash] = {
+                             "email": email,
+                             "expires": time.time() + USERINFO_CACHE_TTL
+                         }
 
         if email is None:
              raise JWTError("Email claim missing in Token and UserInfo")
