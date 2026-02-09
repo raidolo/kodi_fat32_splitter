@@ -135,13 +135,14 @@ Add it to your `.env`:
 SECRET_KEY=your-generated-key-here
 ```
 
-### SETUP_ENABLED (Optional Hardening)
+### Setup Endpoint Auto-Disable
 
-After completing initial setup, you can disable the `/api/setup` endpoint for extra security:
+The `/api/setup` endpoint automatically disables itself once an admin account with a password is configured. 
 
-```ini
-SETUP_ENABLED=false
-```
+**To reset and start fresh:**
+1. Stop the container
+2. Delete `config/settings.json`
+3. Restart the container
 
 ## 🚦 Getting Started (Development)
 

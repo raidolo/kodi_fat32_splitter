@@ -25,9 +25,6 @@ if not SECRET_KEY:
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Setup Control
-SETUP_ENABLED = os.getenv("SETUP_ENABLED", "true").lower() == "true"
-
 # Rate Limiting for Setup
 SETUP_RATE_LIMIT = {}  # {ip: [timestamp, ...]}
 SETUP_RATE_LIMIT_MAX = 5
@@ -800,18 +797,15 @@ async def change_password(req: PasswordChangeRequest, current_user: User = Depen
 
 @app.post("/api/setup")
 def setup_admin(request: SetupRequest, client_request: Request):
-    # Check if setup is enabled
-    if not SETUP_ENABLED:
-        raise HTTPException(status_code=403, detail="Setup is disabled")
+    # Check if setup is already complete (admin has email AND password)
+    settings = get_settings_internal()
+    if settings.admin_email and settings.admin_password_hash:
+        raise HTTPException(status_code=403, detail="Setup already completed. Delete settings.json to reset.")
     
     # Rate limiting
     client_ip = client_request.client.host if client_request.client else "unknown"
     if not check_rate_limit(client_ip):
         raise HTTPException(status_code=429, detail="Too many requests. Try again later.")
-    
-    settings = get_settings_internal()
-    if settings.admin_email:
-        raise HTTPException(status_code=400, detail="Setup already completed")
     
     hashed_password = get_password_hash(request.password)
     settings.admin_email = request.email

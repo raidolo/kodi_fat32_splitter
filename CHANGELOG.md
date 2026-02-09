@@ -2,6 +2,17 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.1.3] - 2026-02-09
+
+### 🛡️ Security Improvements
+
+- **Automatic Setup Lockdown**: The `/api/setup` endpoint now automatically disables itself once an admin has both email AND password configured. No manual `SETUP_ENABLED` env var required.
+- **Easy Reset**: To reconfigure, simply delete `config/settings.json` and restart.
+
+### ⚙️ Configuration
+
+- Removed `SETUP_ENABLED` environment variable (no longer needed).
+
 ## [v1.1.2] - 2026-02-09
 
 ### 🛡️ Security Fixes
