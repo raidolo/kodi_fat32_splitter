@@ -25,21 +25,24 @@ if not SECRET_KEY:
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Rate Limiting for Setup
+# Rate Limiting
 SETUP_RATE_LIMIT = {}  # {ip: [timestamp, ...]}
-SETUP_RATE_LIMIT_MAX = 5
-SETUP_RATE_LIMIT_WINDOW = 60  # seconds
+LOGIN_RATE_LIMIT = {}  # {ip: [timestamp, ...]}
+RATE_LIMIT_MAX = 5
+RATE_LIMIT_WINDOW = 60  # seconds
 
-def check_rate_limit(ip: str) -> bool:
+def check_rate_limit(ip: str, store: dict, label: str = "unknown", max_attempts: int = RATE_LIMIT_MAX, window: int = RATE_LIMIT_WINDOW) -> bool:
     """Check if IP is rate limited. Returns True if request is allowed."""
     current = time.time()
-    attempts = SETUP_RATE_LIMIT.get(ip, [])
+    attempts = store.get(ip, [])
     # Remove old attempts outside window
-    attempts = [t for t in attempts if current - t < SETUP_RATE_LIMIT_WINDOW]
-    if len(attempts) >= SETUP_RATE_LIMIT_MAX:
+    attempts = [t for t in attempts if current - t < window]
+    if len(attempts) >= max_attempts:
+        print(f"⚠️  RATE LIMIT BLOCKED [{label}] IP: {ip} — {len(attempts)}/{max_attempts} attempts in {window}s window")
         return False
     attempts.append(current)
-    SETUP_RATE_LIMIT[ip] = attempts
+    store[ip] = attempts
+    print(f"🔒 [{label}] IP: {ip} — attempt {len(attempts)}/{max_attempts}")
     return True
 
 # OIDC Configuration
@@ -294,6 +297,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
              else:
                  raise credentials_exception
         except JWTError:
+             print(f"⚠️  [OIDC AUTH] Token validation failed")
              raise credentials_exception
     except Exception:
         raise credentials_exception
@@ -804,7 +808,7 @@ def setup_admin(request: SetupRequest, client_request: Request):
     
     # Rate limiting
     client_ip = client_request.client.host if client_request.client else "unknown"
-    if not check_rate_limit(client_ip):
+    if not check_rate_limit(client_ip, SETUP_RATE_LIMIT, "SETUP"):
         raise HTTPException(status_code=429, detail="Too many requests. Try again later.")
     
     hashed_password = get_password_hash(request.password)
@@ -819,7 +823,11 @@ def setup_admin(request: SetupRequest, client_request: Request):
     return {"status": "setup complete"}
 
 @app.post("/api/auth/login", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
+    # Rate limiting
+    client_ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(client_ip, LOGIN_RATE_LIMIT, "LOGIN"):
+        raise HTTPException(status_code=429, detail="Too many login attempts. Try again later.")
     settings = get_settings_internal()
     if not settings.admin_email:
         # Fallback if no setup done? Or ensure setup is done first.
@@ -858,7 +866,9 @@ async def promote_oidc_user(request: Request):
     # Verify the OIDC token
     try:
         token_data = await validate_oidc_token(oidc_token)
+        print(f"🔑 [OIDC PROMOTE] Valid token for: {token_data.email}")
     except JWTError as e:
+        print(f"⚠️  [OIDC PROMOTE] Invalid token attempt from IP: {request.client.host if request.client else 'unknown'}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid OIDC token: {str(e)}"

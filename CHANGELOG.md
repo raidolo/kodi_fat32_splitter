@@ -2,6 +2,20 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.1.5] - 2026-02-13
+
+### 🛡️ Security
+
+- **Rate Limiting for `/api/auth/login`**: Added rate limiting (max 5 requests/minute per IP) to prevent brute-force attacks on the login endpoint.
+- **Generalized Rate Limiter**: Refactored the rate limiting function to be reusable across endpoints (`login`, `setup`), with per-endpoint tracking and configurable limits.
+
+### 📝 Logging
+
+- **Auth Activity Logging**: Added console logging for security-relevant events:
+    - Rate limit attempts and blocks for both `LOGIN` and `SETUP` endpoints (with IP, attempt count, and warning on block).
+    - OIDC token validation failures and promote attempts.
+- **Reduced Log Noise**: Removed per-request success logs from `get_current_user` to avoid spamming the console on every authenticated API call.
+
 ## [v1.1.4] - 2026-02-13
 
 ### 🧹 Cleanup
