@@ -3,6 +3,5 @@
 window._env_ = {
     OIDC_AUTH: "false",
     OIDC_AUTHORITY: "",
-    OIDC_CLIENT_ID: "",
-    OIDC_LOGOUT: ""
+    OIDC_CLIENT_ID: ""
 };

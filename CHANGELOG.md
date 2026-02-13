@@ -2,6 +2,16 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.1.4] - 2026-02-13
+
+### 🧹 Cleanup
+
+- **Removed `OIDC_LOGOUT`**: Removed the unused `OIDC_LOGOUT` environment variable from all configuration files (`.env.example`, `docker-compose.yml`, `config.js`, `entrypoint.sh`, `AuthProviderWrapper.jsx`). The OIDC end-session URL is automatically discovered via the provider's `.well-known/openid-configuration` endpoint.
+
+### 📝 Documentation
+
+- **Updated README**: Added a note clarifying that logout URL configuration is not needed — it is auto-discovered from the OIDC provider.
+
 ## [v1.1.3] - 2026-02-09
 
 ### 🛡️ Security Improvements

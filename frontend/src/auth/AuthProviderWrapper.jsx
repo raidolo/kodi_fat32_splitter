@@ -11,7 +11,6 @@ export const getRuntimeConfig = () => {
         oidcAuth: get('OIDC_AUTH', 'VITE_OIDC_AUTH') === 'true',
         authority: get('OIDC_AUTHORITY', 'VITE_OIDC_AUTHORITY'),
         clientId: get('OIDC_CLIENT_ID', 'VITE_OIDC_CLIENT_ID'),
-        oidcLogout: get('OIDC_LOGOUT', 'VITE_OIDC_LOGOUT'),
     };
 };
 

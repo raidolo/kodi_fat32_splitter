@@ -96,6 +96,9 @@ Configuration is handled via a `.env` file in the root directory.
     OIDC_AUTHORITY=https://auth.yourdomain.com
     OIDC_CLIENT_ID=your-client-id
     ```
+    > [!NOTE]
+    > **Logout**: The OIDC end-session URL is automatically discovered via your provider's `.well-known/openid-configuration` endpoint. No manual logout URL configuration is needed.
+
     > [!IMPORTANT]
     > **PKCE Requirement**: You must configure your Identity Provider's client (e.g., Pocket ID, Keycloak) as a **Public Client** (confidentiality disabled) and enable **Standard Flow** + **Direct Access Grants** (if applicable), but most importantly **PKCE**.
 
