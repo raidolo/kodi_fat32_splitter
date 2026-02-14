@@ -2,6 +2,12 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.1.8] - 2026-02-14
+
+### 🐛 Bug Fixes
+
+- **OIDC Token Validation**: Fixed a `KeyError: 'kid'` crash when the OIDC provider issues tokens without a `kid` (Key ID) in the JWT header. The backend now gracefully falls back to the first RSA key in the JWKS when no `kid` is present — common for single-key providers like Pocket ID.
+
 ## [v1.1.7] - 2026-02-14
 
 ### 🚀 Performance

@@ -203,13 +203,25 @@ async def validate_oidc_token(token: str) -> TokenData:
         # 3. Decode token header to get Key ID (kid)
         unverified_header = jwt.get_unverified_header(token)
         rsa_key = {}
+        token_kid = unverified_header.get("kid")
         
         for key in jwks["keys"]:
-            if key["kid"] == unverified_header["kid"]:
+            # Match by kid if present, otherwise use first RSA key
+            if token_kid and key.get("kid") == token_kid:
                 rsa_key = {
                     "kty": key["kty"],
-                    "kid": key["kid"],
-                    "use": key["use"],
+                    "kid": key.get("kid"),
+                    "use": key.get("use"),
+                    "n": key["n"],
+                    "e": key["e"]
+                }
+                break
+            elif not token_kid and key.get("kty") == "RSA":
+                # No kid in token header — use first RSA key (common for single-key providers)
+                rsa_key = {
+                    "kty": key["kty"],
+                    "kid": key.get("kid"),
+                    "use": key.get("use"),
                     "n": key["n"],
                     "e": key["e"]
                 }
