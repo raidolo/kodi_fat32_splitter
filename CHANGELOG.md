@@ -2,6 +2,12 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.1.7] - 2026-02-14
+
+### 🚀 Performance
+
+- **Eliminated Idle Polling**: The frontend no longer polls `/api/status` every 2 seconds when no task is running. Status is fetched once on load, then polling only activates while a split task is in progress — dramatically reducing backend log noise and unnecessary network traffic.
+
 ## [v1.1.6] - 2026-02-14
 
 ### 📝 Logging

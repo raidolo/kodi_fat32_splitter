@@ -32,10 +32,11 @@ const TaskControl = ({ selectedFiles, onTaskChange, onTaskComplete }) => {
     };
 
     useEffect(() => {
-        fetchStatus(); // Fetch immediately
+        fetchStatus(); // Fetch once on mount / when running state changes
+        if (!status.is_running) return; // Don't poll when idle
         const interval = setInterval(fetchStatus, 2000);
         return () => clearInterval(interval);
-    }, [lastStatusRunning, user?.token]);
+    }, [status.is_running, user?.token]);
 
     const handleStart = async () => {
         if (!selectedFiles || selectedFiles.length === 0) return;
