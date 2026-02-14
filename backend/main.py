@@ -60,6 +60,7 @@ OIDC_CACHE = {
 # Cache for UserInfo (keyed by token hash, short TTL)
 USERINFO_CACHE = {}  # {token_hash: {"email": ..., "expires": timestamp}}
 USERINFO_CACHE_TTL = 300  # 5 minutes
+LOGGED_TOKENS = set()  # Track already-logged token hashes to avoid per-request spam
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
@@ -216,6 +217,7 @@ async def validate_oidc_token(token: str) -> TokenData:
         
         if not rsa_key:
              # Refresh JWKS? For now just fail.
+            print(f"⚠️  [OIDC] No matching key found for kid: {unverified_header.get('kid')}")
             raise JWTError("Unable to find appropriate key")
 
         # 4. Verify Token Signature
@@ -261,13 +263,20 @@ async def validate_oidc_token(token: str) -> TokenData:
                          }
 
         if email is None:
+             print(f"⚠️  [OIDC] Email claim missing in Token and UserInfo")
              raise JWTError("Email claim missing in Token and UserInfo")
+        
+        # Log successful validation only once per token
+        import hashlib
+        log_hash = hashlib.sha256(token.encode()).hexdigest()[:16]
+        if log_hash not in LOGGED_TOKENS:
+            LOGGED_TOKENS.add(log_hash)
+            print(f"🔑 [OIDC AUTH] User authenticated: {email}")
              
         return TokenData(email=email)
 
     except Exception as e:
-        print(f"OIDC Validation failed: {e}")
-        # Print stack trace if needed, or detailed error
+        print(f"⚠️  [OIDC] Validation failed: {e}")
         import traceback
         traceback.print_exc()
         raise JWTError(str(e))
@@ -933,6 +942,21 @@ def auth_status():
         "password_setup_required": pass_setup_req,
         "oidc_enabled": False # Placeholder
     }
+
+@app.post("/api/auth/logout")
+async def logout(request: Request, current_user: User = Depends(get_current_active_user)):
+    """Log the logout event and clean up token tracking."""
+    print(f"🔓 [LOGOUT] User: {current_user.email}")
+    
+    # Clean up LOGGED_TOKENS to free memory and ensure next login is logged
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        import hashlib
+        token = auth_header.split(" ")[1]
+        token_hash = hashlib.sha256(token.encode()).hexdigest()[:16]
+        LOGGED_TOKENS.discard(token_hash)
+    
+    return {"status": "logged out"}
 
 @app.get("/api/users/me", response_model=User)
 async def read_users_me(current_user: User = Depends(get_current_active_user)):

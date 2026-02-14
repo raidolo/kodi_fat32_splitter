@@ -2,6 +2,14 @@
 
 All notable changes to the `dev` branch are documented below.
 
+## [v1.1.6] - 2026-02-14
+
+### 📝 Logging
+
+- **OIDC Auth Logging**: Added per-session authentication logging inside `validate_oidc_token` — logs `🔑 [OIDC AUTH] User authenticated: email` only once per token to avoid spam from polling endpoints.
+- **OIDC Failure Logging**: Key validation failures (missing JWKS key, missing email claim, general errors) now log with `⚠️ [OIDC]` prefix for easy filtering.
+- **Logout Logging**: New lightweight `POST /api/auth/logout` endpoint that logs `🔓 [LOGOUT] User: email` and cleans up token tracking. Called fire-and-forget from the frontend before session cleanup.
+
 ## [v1.1.5] - 2026-02-13
 
 ### 🛡️ Security

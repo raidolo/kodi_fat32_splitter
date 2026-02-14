@@ -66,6 +66,14 @@ function App() {
     sessionStorage.setItem('kodi_manual_logout', 'true');
     setIsLogoutModalOpen(false);
 
+    // Notify backend of logout (fire-and-forget)
+    if (auth.user?.token) {
+      fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${auth.user.token}` }
+      }).catch(() => { }); // Ignore errors — logout should proceed regardless
+    }
+
     // If OIDC user, use library method for proper end-session (handles id_token_hint and URL discovery)
     if (auth.oidcEnabled && auth.user?.id_token) {
       // Clear local token state first (but don't call auth.logout() as it wipes OIDC user needed for signout)
