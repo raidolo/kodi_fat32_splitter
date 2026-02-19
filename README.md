@@ -202,3 +202,16 @@ This repository was refactored from a vanilla JS prototype to a robust React app
 
 > [!NOTE]
 > This entire repository was designed and implemented using **Vibe Coding** by **Antigravity**.
+
+---
+
+## 🤝 Support
+
+If you find this project useful, show your support by starring the repository or buying me a coffee!
+
+<div align="center">
+  <iframe style="width:100%;height:auto;min-width:600px;min-height:400px;" src="https://www.star-history.com/embed#raidolo/kodi_fat32_splitter&type=date&legend=top-left" frameBorder="0"></iframe>
+  <br/>
+  <br/>
+  <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="raidolo" data-color="#FFDD00" data-emoji=""  data-font="Cookie" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script>
+</div>
